@@ -74,9 +74,12 @@ public slots:
   void setZerolinex(double y);
   void setZeroliney(double x);
   void readDate();
+  void loadCSVData();
+  void optMarker();
   double run();
 private:
   std::vector<std::pair<float,float>> loadData(std::string strFile);
+  void clearData();
 
   int marginwidth;
   int plotwidth;

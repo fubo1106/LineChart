@@ -62,7 +62,18 @@
 #include "alglib3.9.0/src/stdafx.h"
 using namespace alglib;
 
-double NLfunc(unsigned n, const double *alpha, double *grad, void *data)
+double getOptAspectRatio(const QVector<double>& dataX, const QVector<double>& dataY){
+	double dxSum = 0;
+	double dySum = 0;
+	for (int i = 0; i < dataX.size(); i++){
+		dxSum += dataX[i];
+		dySum += dataY[i];
+	}
+	return dySum / dxSum;
+}
+
+/*every marker percent*/
+double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
 {
 //    ar_data_slopes *d = (ar_data_slopes *) data;
 //    int num = d->num;
@@ -83,14 +94,15 @@ double NLfunc(unsigned n, const double *alpha, double *grad, void *data)
 //    }
 //    grad[0] = derivative/num;
 //    return fabs(funcv);
-
+	double funcv = 0;
     area *a=(area *)data;
     a->setR(alpha[0]);
     //grad[0]=2*M_PI*a->m_Points.size()*alpha[0]-a->grad_circle();
-	grad[0] = a->grad_percent_line() - a->grad_percent_circle();
+	grad[0] = a->grad_percent_line() + a->grad_percent_circle();
 	printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
-	return a->cal_percentcircleare() + a->cal_percentlinearea();
+	//return a->cal_percentcircleare() + a->cal_percentlinearea();
+	return funcv;
 
 }
 
@@ -106,20 +118,28 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->LineSize,SIGNAL(valueChanged(int)),this,SLOT(setLinesize(int)));
   QObject::connect(ControlW->ui->Aspect,SIGNAL(valueChanged(double)),this,SLOT(setAspect(double)));
   QObject::connect(ControlW->ui->background,SIGNAL(toggled(bool)),this,SLOT(setBackground(bool)));
-  QObject::connect(ControlW->ui->btn_read,SIGNAL(clicked(bool)),this,SLOT(readDate()));
+  QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadCSVData()));
+  QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
   plotwidth=300;
   plotheight=300;
   newwidth=plotwidth;
   newheight=plotheight;
+
   marginwidth=15*2;
   setGeometry(10, 40, plotwidth+marginwidth, plotheight+marginwidth);
 
   ControlW->ui->label_x->setText(QString("x=%1").arg(plotwidth));
   ControlW->ui->label_y->setText(QString("y=%1").arg(plotheight));
 
+}
 
+void MainWindow::clearData(){
+	X.clear(); OX.clear();
+	OX.clear(); OY.clear();
+	PX.clear(); PY.clear();
+	m_data.clear(); m_slopes.clear();
 }
 
 float MainWindow::dataProcessing()
@@ -132,7 +152,8 @@ float MainWindow::dataProcessing()
 
 void MainWindow::setMarksize(double d)
 {
-    ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, d));
+	/*previous code*/
+    /*ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, d));
     ui->customPlot->replot();
     cr.setR(d/2);
     lr.setCirclesize(d/2);
@@ -142,7 +163,10 @@ void MainWindow::setMarksize(double d)
     ControlW->ui->label_overlapC->setText(QString("%1").arg(m_area.cal_totalcirclearea()));
     double lm=lr.cal_vis();
     ControlW->ui->label_overlapL->setText(QString("%1").arg(m_area.cal_totallinearea()));
-    ControlW->ui->label_overlapR->setText(QString("%1").arg(m_area.cal_totalcirclearea()+m_area.cal_totallinearea()));
+    ControlW->ui->label_overlapR->setText(QString("%1").arg(m_area.cal_totalcirclearea()+m_area.cal_totallinearea()));*/
+	
+	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, d));
+	ui->customPlot->replot();
 }
 
 void MainWindow::setLinesize(int i)
@@ -176,6 +200,7 @@ void MainWindow::setZerolinex(double y)
     ui->customPlot->graph(2)->drawZeroline(X,y);
     ui->customPlot->replot();
 }
+
 void MainWindow::setZeroliney(double x)
 {
 
@@ -276,36 +301,165 @@ void MainWindow::readDate()
 //     m_area=area(px1,py1,1,3.5);
 //     grad_compute(px1,py1);
 //     lr=linearea(px1,py1,1,2);
-    run();
+   // run();
 
+}
+
+void MainWindow::loadCSVData(){
+	clearData();
+	QString filename = QFileDialog::getOpenFileName(this, QString("Open File XY"), "data/");
+
+	QFile file(filename);
+	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+		return;
+
+	while (!file.atEnd())
+	{
+		QString strLine = file.readLine();
+		QStringList lineStrList = strLine.split(QRegExp("[\r\n]"), QString::SkipEmptyParts);
+
+		if (lineStrList.size()>0)
+		{
+			QStringList strNumbers = lineStrList.at(0).split(',');
+			if (strNumbers.size() >= 2)
+			{
+				double xx = strNumbers.at(0).toDouble();
+				double yy = strNumbers.at(1).toDouble();
+				//m_data.push_back(pair<double, double>(xx, yy));
+				X.push_back(xx); OX.push_back(xx);
+				Y.push_back(yy); OY.push_back(yy);
+			}
+		}
+	}
+	ui->customPlot->addGraph();
+	ui->customPlot->graph(0)->setData(X, Y);
+	ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
+	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
+	//ui->customPlot->graph(0)->setPen(QPen(QColor(255, 0, 0)));
+	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+	ui->customPlot->addGraph();
+	ui->customPlot->graph(1)->setData(X, Y);
+	//     ui->customPlot->graph(1)->setLineStyle(QCPGraph::LineStyle::lsLine);
+	qSort(X);//find maximum and minimum value of set X.
+	qSort(Y);
+	ui->customPlot->addGraph();
+	ui->customPlot->graph(2)->drawZeroline(X, ControlW->ui->zeroliney->value());//set x
+	//     ui->customPlot->graph(2)->setLineStyle(QCPGraph::LineStyle::lsLine);
+	ui->customPlot->addGraph();
+	ui->customPlot->graph(3)->drawZeroline(ControlW->ui->zerolinex->value(), Y);//set y
+
+	ui->customPlot->xAxis->setTicks(true);//Ticks invisiable
+	ui->customPlot->yAxis->setTicks(true);
+	ui->customPlot->xAxis->setBasePen(QPen(QColor(200, 0, 0), 0, Qt::DotLine));//Draw basic axis with dotline style
+	ui->customPlot->yAxis->setBasePen(QPen(QColor(200, 0, 0), 0, Qt::DotLine));
+	ui->customPlot->xAxis->setTickLabels(true);
+	ui->customPlot->yAxis->setTickLabels(true);
+	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
+	ui->customPlot->yAxis->setRange(*Y.begin(), *(Y.end() - 1));
+	ControlW->ui->label_rangeX->setText(QString("X is from %1 to %2").arg(*X.begin()).arg(*(X.end() - 1)));
+	ControlW->ui->label_rangeY->setText(QString("Y is from %1 to %2").arg(*Y.begin()).arg(*(Y.end() - 1)));
+	ui->customPlot->replot();
+
+	double pwidth, pheight;
+	pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	double changeX = pwidth / newwidth;
+	pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	double changeY = pheight / newheight;
+	for (int i = 0; i != X.size(); i++)
+	{
+		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
+		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
+		PX.push_back(tmpX);
+		PY.push_back(tmpY);
+	}
+
+	QVector<double> ls1, ls2, ls12;
+	//计算A，这里i就是a
+	double init_i = 0.1;
+	double step = 0.1;
+	double maxValue = newwidth;
+
+	//run();
+	return;
+}
+
+void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &minMinf)
+{
+	int numInitialization = 20;
+	double minfunc = minMinf;
+	for (int ii = 0; ii<numInitialization; ii++)
+	{
+		//double markersize = fabs(rand() / double(RAND_MAX));
+		double markersize = 7;
+		double initaR = markersize;
+		double minf;
+		if (nlopt_optimize(opt, &markersize, &minf) < 0) {
+			printf("nlopt failed!\n");
+		}
+		else {
+			if (minf<minMinf)
+			{
+				minMinf = minf;
+				goodMS = markersize;
+				goodInit = initaR;
+			}
+			//printf("found minimum at f(%g) = %0.10g from initial %g\n", aspectRatio, minf, initaR);
+
+		}
+	}
 }
 
 double MainWindow::run()
 {
-
+	//double as = getOptAspectRatio(X, Y);
+	//printf("optimal aspect ratio:%f\n", as);
+	//setAspect(as);
+	//return as;
+#if 1
     area *ardata = new area(PX,PY,1,7);
-
-    double lb =  1 ;//line size
+    double lb =  0.5 ;//line size
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
     nlopt_set_lower_bounds(opt, &lb);
 
-    nlopt_set_min_objective(opt, NLfunc, (void *)ardata);
-    nlopt_set_xtol_rel(opt, 1e-8);
+    nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
+    nlopt_set_xtol_rel(opt, 1e-4);
     double aspectRatio = 1.0005;
+	double markersize = 7;
     double minf;
 
-    if (nlopt_optimize(opt, &aspectRatio, &minf) < 0) {
+	/*aspect ratio optimization*/
+    /*if (nlopt_optimize(opt, &aspectRatio, &minf) < 0) {
         printf("nlopt failed!\n");
     }
     else {
         printf("found minimum at f(%g) = %0.10g\n", aspectRatio, minf);
-    }
+    }*/
 
+	/*marker size optimization*/
+	/*if (nlopt_optimize(opt, &markersize, &minf) < 0) {
+		printf("nlopt failed!\n");
+	}
+	else {
+		printf("found minimum at f(%g) = %0.10g\n", markersize, minf);
+	}*/
 
+	double minMinf = 10e+6;
+	double minMindx = 1000;
+	double goodMS = 0;
+	double goodII = 0;
+	runLocalOptimizer(opt, goodMS, goodII, minMinf);
     nlopt_destroy(opt);
     delete ardata;
-    return aspectRatio;
+    return markersize;
+#endif
+	
+}
+
+void MainWindow::optMarker(){
+	setMarksize(run());
+	return;
 }
 
 

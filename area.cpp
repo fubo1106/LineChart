@@ -203,7 +203,6 @@ double area::cal_percentlinearea(){
 	return vis_per_L;
 }
 
-
 void area::fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)
 {
     setR(x[0]);
@@ -260,7 +259,8 @@ double area::grad_percent_circle(){
 
 		grad += temp;
 	}
-	return grad / (2 * M_PI * m_overlaptwopoint.size());
+	//return grad / (2 * M_PI * m_overlaptwopoint.size());
+	return 0;
 }
 
 double area::grad_line()
