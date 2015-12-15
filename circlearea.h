@@ -23,6 +23,11 @@ public:
     double sumtotal() const;
     void setSumtotal(double sumtotal);
 
+public:
+	bool inside(QVector2D& p, circle& c);
+	QVector<QVector2D> intersection(circle& c1, circle& c2);
+	QVector<QVector2D> intersection(circle& c1, circle& c2, circle& c3);
+
 private:
     QVector<QVector2D> m_Points;
     alglib::real_2d_array alg_Points;

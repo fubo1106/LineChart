@@ -4,6 +4,7 @@
 #include "alglib3.9.0/src/ap.h"
 #include <QDebug>
 #include <QtCore/qmath.h>
+
 using namespace alglib;
 circlearea::circlearea()
 {
@@ -140,6 +141,67 @@ double circlearea::sumtotal() const
 void circlearea::setSumtotal(double sumtotal)
 {
     m_sumtotal = sumtotal;
+}
+
+bool circlearea::inside(QVector2D& p, circle& c){
+	QVector2D cen = c.mid();
+	return (p - cen).length() < c.r();
+}
+
+QVector<QVector2D> circlearea::intersection(circle& c1, circle& c2){
+	QVector2D p1 = c1.mid();
+	QVector2D p2 = c2.mid();
+	QVector <QVector2D> points;
+	QVector2D point;
+
+	double D = (p1 - p2).length();
+	double del = 0.25*D*sqrt(4 * m_r*m_r - D*D);
+
+	double a = p1.x();
+	double b = p1.y();
+	double c = p2.x();
+	double d = p2.y();
+
+	if ((c1.r() + c2.r()) > D && fabs(c1.r() - c2.r()) < D){
+		double x1 = (a + c) / 2 + 2 * (b - d) / D*del;
+		double y1 = (a + c) / 2 - 2 * (b - d) / D*del;
+		points.push_back(QVector2D(x1, y1));
+
+		double x2 = (b + d) / 2 - 2 * (a - c) / D*del;
+		double y2 = (b + d) / 2 + 2 * (a - c) / D*del;
+		points.push_back(QVector2D(x2, y2));
+	}
+	return points;
+}
+
+QVector<QVector2D> circlearea::intersection(circle& c1, circle& c2, circle& c3){
+	QVector<QVector2D> inte12 = intersection(c1, c2);
+	QVector<QVector2D> inte23 = intersection(c2, c3);
+	QVector<QVector2D> inte13 = intersection(c1, c3);
+
+	QVector<QVector2D> points;
+	//p1
+	if (inside(inte12[0], c3)){
+		points.push_back(inte12[0]);
+	}
+	else{
+		points.push_back(inte12[1]);
+	}
+	//p2
+	if (inside(inte23[0], c1)){
+		points.push_back(inte23[0]);
+	}
+	else{
+		points.push_back(inte23[1]);
+	}
+	//p3
+	if (inside(inte13[0], c2)){
+		points.push_back(inte13[0]);
+	}
+	else{
+		points.push_back(inte13[1]);
+	}
+	return points;
 }
 
 

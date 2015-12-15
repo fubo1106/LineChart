@@ -14,6 +14,8 @@ public:
     void overlap();
     bool sametwo(const alglib::real_2d_array &p,const alglib::real_2d_array &q);
     double cal_overlaptwo(const alglib::real_2d_array &twopoints);
+	double cal_overlapthree(const alglib::real_2d_array &twopoints);
+	double cal_overlapallthree(const alglib::real_2d_array &twopoints);
     double cal_totalcirclearea();
 	double cal_percentcircleare();
 
@@ -24,6 +26,7 @@ public:
     double cal_totallinearea();
 	double cal_percentlinearea();
 
+	double cal_area_from_three_vetex(const QVector2D &s, const QVector2D &o, const QVector2D &e);
 
     void fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr);
     void cal_grad();
@@ -34,8 +37,6 @@ public:
     double r() const;
     void setR(double r);
 
-
-
     double linesize() const;
     void setLinesize(double linesize);
 
@@ -44,6 +45,8 @@ public:
     real_2d_array alg_Points;
     kdtree m_kdtree;
     QVector<real_2d_array> m_overlaptwopoint;
+	QVector<real_2d_array> m_overlapthreepoint;
+	QVector<real_2d_array> m_overlapallthreepoint;
 
     double m_r;
     double m_linesize;

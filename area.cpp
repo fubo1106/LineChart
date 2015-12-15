@@ -63,19 +63,31 @@ void area::overlap()
             //qDebug()<<i;
             real_2d_array result;
             kdtreequeryresultsx(m_kdtree,result);
-            //printf("overlap:%s\n", result.tostring(0).c_str());
+            printf("overlap 2: pair:%[%f %f],[%f %f]\n", result[0][0], result[0][1], result[1][0], result[1][1]);
             m_overlaptwopoint.push_back(result);
         }
-//        if(num==3)
-//        {
-//            real_2d_array result;
-//            kdtreequeryresultsx(m_kdtree,result);
-//            qDebug()<<QString(result.tostring(0).c_str());
-//            m_overlapthree.push_back(result);
-//        }
+        if(num==3)
+        {
+            real_2d_array result;
+            kdtreequeryresultsx(m_kdtree,result);
+			//printf("overlap 3: marker:[%f %f] pair:[%f %f] [%f %f]\n", p[0], p[1], result[0][0], result[0][1], result[1][0], result[1][1]);
+			printf("overlap 3: pair:[%f %f] [%f %f] [%f %f]\n", result(0, 0), result(0, 1), result(1, 0), result(1, 1), result(2, 0), result(2, 1));
+			QVector2D a(result(1,0), result(1,1));
+			QVector2D b(result(2,0), result(2,1));
+			double len = (b - a).length();
+
+			if (len < (m_r)* 2)
+				m_overlapallthreepoint.push_back(result); //两两相交
+			else
+				m_overlapthreepoint.push_back(result);
+
+			//qDebug()<<QString(result.tostring(0).c_str());
+            //m_overlapthree.push_back(result);
+        }
         if(num>3)
         {
-            //qDebug()<<num<<" "<<i<<" Mark size is too large";
+            qDebug()<<num<<" "<<i<<" Mark size is too large";
+			//exit(0);
         }
     }
 }
@@ -106,6 +118,52 @@ double area::cal_overlaptwo(const real_2d_array &twopoints)
     return qPow(m_r,2)*(angel-qSin(angel));//another formular
 }
 
+double area::cal_overlapthree(const real_2d_array &twopoints){
+	QVector2D a(twopoints(0, 0), twopoints(0, 1));
+	QVector2D b(twopoints(1, 0), twopoints(1, 1));
+	QVector2D c(twopoints(2, 0), twopoints(2, 1));
+	
+	double d1 = (b - a).length();
+	double angel1 = 2 * qAcos(d1 / (2 * m_r));
+	double overlaop1 = qPow(m_r, 2)*(angel1 - qSin(angel1));//another formular
+
+	double d2 = (c - a).length();
+	double angel2 = 2 * qAcos(d2 / (2 * m_r));
+	double overlaop2 = qPow(m_r, 2)*(angel2 - qSin(angel2));//another formular
+
+	return overlaop1 + overlaop2;
+}
+
+double area::cal_overlapallthree(const real_2d_array &twopoints){
+	
+	double overlap = cal_overlapthree(twopoints);
+
+	//common area
+	double common_area = 0;
+	QVector2D a(twopoints(0, 0), twopoints(0, 1));
+	QVector2D b(twopoints(1, 0), twopoints(1, 1));
+	QVector2D c(twopoints(2, 0), twopoints(2, 1));
+
+	QVector2D ab = b - a;
+	QVector2D ac = c - a;
+	//case1: 3 circles in a line
+	if (ab[0] / ac[0] == ab[1] / ac[1]){
+		real_2d_array common;
+		common.setlength(2, 2);
+		common(0, 0) = twopoints(1, 0);
+		common(0, 1) = twopoints(1, 1);
+		common(1, 0) = twopoints(2, 0);
+		common(1, 1) = twopoints(2, 1);
+		common_area = cal_overlaptwo(common);
+	}
+	//case2: 3 circle not in a line
+	else{
+
+	}
+
+	return overlap - common_area;
+}
+
 double area::cal_totalcirclearea()
 {
     double m_sumtwo=0;
@@ -130,6 +188,12 @@ double area::cal_percentcircleare(){
 			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
 		else
 			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]) + cal_overlaptwo(m_overlaptwopoint[i + 1]);
+	}
+	for (int i = 0; i < m_overlapthreepoint.size(); i++){
+		m_sumtwo += cal_overlapthree(m_overlaptwopoint[i]);
+	}
+	for (int i = 0; i < m_overlapallthreepoint.size(); i++){
+		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);;
 	}
 	vis_per_C = (sum_C - m_sumtwo)/sum_C;
 	return vis_per_C;
@@ -201,6 +265,19 @@ double area::cal_percentlinearea(){
 	vis_per_L = (m_length*m_linesize - m_Col - cal_coverline() + m_Tri) / sum_L;
 	
 	return vis_per_L;
+}
+
+double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){
+	double Ax = v1.x();
+	double Ay = v1.y();
+
+	double Bx = v2.x();
+	double By = v2.y();
+
+	double Cx = v3.x();
+	double Cy = v3.y();
+
+	return fabs(Ax*(By - Cy) + Bx*(Cy - Ay) + Cx*(Ay - By)) / 2;
 }
 
 void area::fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr)

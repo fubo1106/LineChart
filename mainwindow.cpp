@@ -336,23 +336,25 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
-	//ui->customPlot->graph(0)->setPen(QPen(QColor(255, 0, 0)));
+	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74)));
 	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(1)->setData(X, Y);
+	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
 	//     ui->customPlot->graph(1)->setLineStyle(QCPGraph::LineStyle::lsLine);
 	qSort(X);//find maximum and minimum value of set X.
 	qSort(Y);
-	ui->customPlot->addGraph();
-	ui->customPlot->graph(2)->drawZeroline(X, ControlW->ui->zeroliney->value());//set x
-	//     ui->customPlot->graph(2)->setLineStyle(QCPGraph::LineStyle::lsLine);
-	ui->customPlot->addGraph();
-	ui->customPlot->graph(3)->drawZeroline(ControlW->ui->zerolinex->value(), Y);//set y
+
+	//ui->customPlot->addGraph();
+	//ui->customPlot->graph(2)->drawZeroline(X, ControlW->ui->zeroliney->value());//set x
+	////     ui->customPlot->graph(2)->setLineStyle(QCPGraph::LineStyle::lsLine);
+	//ui->customPlot->addGraph();
+	//ui->customPlot->graph(3)->drawZeroline(ControlW->ui->zerolinex->value(), Y);//set y
 
 	ui->customPlot->xAxis->setTicks(true);//Ticks invisiable
 	ui->customPlot->yAxis->setTicks(true);
-	ui->customPlot->xAxis->setBasePen(QPen(QColor(200, 0, 0), 0, Qt::DotLine));//Draw basic axis with dotline style
-	ui->customPlot->yAxis->setBasePen(QPen(QColor(200, 0, 0), 0, Qt::DotLine));
+	ui->customPlot->xAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));//Draw basic axis with dotline style
+	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));
 	ui->customPlot->xAxis->setTickLabels(true);
 	ui->customPlot->yAxis->setTickLabels(true);
 	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
@@ -417,7 +419,9 @@ double MainWindow::run()
 	//setAspect(as);
 	//return as;
 #if 1
-    area *ardata = new area(PX,PY,1,7);
+	double lineWidth = ControlW->ui->LineSize->value();
+	double markerSize = ControlW->ui->MarkSize->value();
+	area *ardata = new area(PX, PY, lineWidth, markerSize);
     double lb =  0.5 ;//line size
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
@@ -426,7 +430,7 @@ double MainWindow::run()
     nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
     nlopt_set_xtol_rel(opt, 1e-4);
     double aspectRatio = 1.0005;
-	double markersize = 7;
+	double markersize = markerSize;
     double minf;
 
 	/*aspect ratio optimization*/
