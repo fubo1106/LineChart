@@ -19,6 +19,8 @@ area::area(const QVector<double> &px, const QVector<double> &py, const double &l
     m_CoC=0;
     m_Col=0;
     m_length=0;
+	grad_C = 0;
+	grad_L = 0;
 
     for(int i=0;i!=px.size();i++)
     {
@@ -118,6 +120,18 @@ double area::cal_overlaptwo(const real_2d_array &twopoints)
     return qPow(m_r,2)*(angel-qSin(angel));//another formular
 }
 
+double area::grad_overlaptwo(const real_2d_array &twopoints){
+	QVector2D a(twopoints[0][0], twopoints[0][1]);
+	QVector2D b(twopoints[1][0], twopoints[1][1]);
+
+	double d = (b - a).length();
+	double acosTheta = acos(d / (2 * m_r));
+	double rSquare = pow(m_r, 2);
+	double SquareMulSqrt = rSquare*sqrt(1 - pow(d, 2) / (4 * rSquare));
+
+	return rSquare*d*((1 - cos(2 * acosTheta)) / SquareMulSqrt) + 2 * m_r*(2 * acosTheta - sin(2 * acosTheta));
+}
+
 double area::cal_overlapthree(const real_2d_array &twopoints){
 	QVector2D a(twopoints(0, 0), twopoints(0, 1));
 	QVector2D b(twopoints(1, 0), twopoints(1, 1));
@@ -134,15 +148,30 @@ double area::cal_overlapthree(const real_2d_array &twopoints){
 	return overlaop1 + overlaop2;
 }
 
+double area::grad_overlapthree(const real_2d_array &twopoints){
+	real_2d_array overlap12, overlap13;
+	overlap12(0, 0) = twopoints(0, 0); overlap12(0, 1) = twopoints(0, 1);
+	overlap12(1, 0) = twopoints(1, 0); overlap12(1, 1) = twopoints(1, 1);
+	
+	overlap13(0, 0) = twopoints(0, 0); overlap13(0, 1) = twopoints(0, 1);
+	overlap13(1, 0) = twopoints(2, 0); overlap13(1, 1) = twopoints(2, 1);
+
+	return grad_overlaptwo(overlap12) + grad_overlaptwo(overlap13);
+}
+
 double area::cal_overlapallthree(const real_2d_array &twopoints){
 	
 	double overlap = cal_overlapthree(twopoints);
-
 	//common area
 	double common_area = 0;
 	QVector2D a(twopoints(0, 0), twopoints(0, 1));
 	QVector2D b(twopoints(1, 0), twopoints(1, 1));
 	QVector2D c(twopoints(2, 0), twopoints(2, 1));
+
+	circle aa(m_r, a);
+	circle bb(m_r, b);
+	circle cc(m_r, c);
+	circlearea area;
 
 	QVector2D ab = b - a;
 	QVector2D ac = c - a;
@@ -158,10 +187,52 @@ double area::cal_overlapallthree(const real_2d_array &twopoints){
 	}
 	//case2: 3 circle not in a line
 	else{
+		QVector<QVector2D> points = area.intersection(aa, bb, cc); //see the return point format
+		double angle1 = cal_Angle(points[1], aa.mid(), points[2]); //angle in aa
+		double angle2 = cal_Angle(points[0], bb.mid(), points[2]); //in bb
+		double angle3 = cal_Angle(points[0], cc.mid(), points[1]); //in cc
 
+		double triangle_area = cal_area_from_three_vetex(points[0], points[1], points[2]);
+		double sector1 = angle1 / 2 * m_r*m_r - cal_area_from_three_vetex(aa.mid(),points[1], points[2]);
+		double sector2 = angle2 / 2 * m_r*m_r - cal_area_from_three_vetex(bb.mid(), points[0], points[2]);
+		double sector3 = angle3 / 2 * m_r*m_r - cal_area_from_three_vetex(cc.mid(), points[0], points[1]);
+
+		common_area = triangle_area + sector1 + sector2 + sector3;
 	}
 
 	return overlap - common_area;
+}
+
+double area::grad_overlapallthree(const real_2d_array &points){
+	double grad_all = grad_overlapthree(points);
+	double grad_common;
+
+	QVector2D a(points(0, 0), points(0, 1));
+	QVector2D b(points(1, 0), points(1, 1));
+	QVector2D c(points(2, 0), points(2, 1));
+
+	circle aa(m_r, a);
+	circle bb(m_r, b);
+	circle cc(m_r, c);
+	circlearea area;
+
+	QVector2D ab = b - a;
+	QVector2D ac = c - a;
+	//case1: 3 circles in a line
+	if (ab[0] / ac[0] == ab[1] / ac[1]){
+		real_2d_array common;
+		common.setlength(2, 2);
+		common(0, 0) = points(1, 0);
+		common(0, 1) = points(1, 1);
+		common(1, 0) = points(2, 0);
+		common(1, 1) = points(2, 1);
+		grad_common = grad_overlaptwo(common);
+	}
+	//case2: 3 circle not in a line
+	else{
+		
+	}
+	return 0;
 }
 
 double area::cal_totalcirclearea()
@@ -170,10 +241,12 @@ double area::cal_totalcirclearea()
     overlap();
     for(int i=0;i<m_overlaptwopoint.size()-1;i=i+2)
     {
-        if(sametwo(m_overlaptwopoint[i],m_overlaptwopoint[i+1]))
-            m_sumtwo+=cal_overlaptwo(m_overlaptwopoint[i]);
-        else
-            m_sumtwo+=cal_overlaptwo(m_overlaptwopoint[i])+cal_overlaptwo(m_overlaptwopoint[i+1]);
+		if (sametwo(m_overlaptwopoint[i], m_overlaptwopoint[i + 1])){
+			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
+		}   
+		else{
+			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]) + cal_overlaptwo(m_overlaptwopoint[i + 1]);
+		}        
     }
 	vis_C = sum_C - m_sumtwo;
     return vis_C;
@@ -181,19 +254,20 @@ double area::cal_totalcirclearea()
 
 double area::cal_percentcircleare(){
 	double m_sumtwo = 0;
+	grad_C = 0;
 	overlap();
 	for (int i = 0; i<m_overlaptwopoint.size() - 1; i = i + 2)
-	{
-		if (sametwo(m_overlaptwopoint[i], m_overlaptwopoint[i + 1]))
-			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
-		else
-			m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]) + cal_overlaptwo(m_overlaptwopoint[i + 1]);
+	{	
+		m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
+		grad_C += grad_overlaptwo(m_overlaptwopoint[i]);
 	}
 	for (int i = 0; i < m_overlapthreepoint.size(); i++){
-		m_sumtwo += cal_overlapthree(m_overlaptwopoint[i]);
+		m_sumtwo += cal_overlapthree(m_overlapthreepoint[i]);
+		grad_C += grad_overlapthree(m_overlapthreepoint[i]);
 	}
 	for (int i = 0; i < m_overlapallthreepoint.size(); i++){
-		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);;
+		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);
+		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
 	vis_per_C = (sum_C - m_sumtwo)/sum_C;
 	return vis_per_C;
@@ -255,16 +329,19 @@ double area::cal_totallinearea()
 
 double area::cal_percentlinearea(){
 	m_Col = 0;
-	int numoverlaptwo = m_overlaptwopoint.size() / 2;
+	int numoverlaptwo = m_overlaptwopoint.size();
+	int numoverlapthree = m_overlapthreepoint.size();
+	int numoverlapallthree = m_overlapallthreepoint.size();
 	double m_Tri = 0;
-	m_Col = 2 * (m_Points.size() - numoverlaptwo)*cal_Col(m_r, m_linesize);
+	m_Col = 2 * (m_Points.size() - numoverlaptwo - numoverlapthree - numoverlapallthree)*cal_Col(m_r, m_linesize);
 	for (int i = 1; i != m_Points.size() - 1; i++)//Lol
 	{
 		m_Tri += cal_Tri(m_Points[i - 1], m_Points[i], m_Points[i + 1]);
 	}
 	vis_per_L = (m_length*m_linesize - m_Col - cal_coverline() + m_Tri) / sum_L;
 	
-	return vis_per_L;
+	//return vis_per_L;
+	return 0;
 }
 
 double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){

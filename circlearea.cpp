@@ -179,30 +179,35 @@ QVector<QVector2D> circlearea::intersection(circle& c1, circle& c2, circle& c3){
 	QVector<QVector2D> inte23 = intersection(c2, c3);
 	QVector<QVector2D> inte13 = intersection(c1, c3);
 
-	QVector<QVector2D> points;
+	/*points[0]: intersection(c2, c3) inside c1
+	points[1]: intersection(c1, c3) inside c2
+	points[2]: intersection(c1, c2) inside c3*/
+	QVector<QVector2D> points; //points[0]: intersection(c1,c2)
 	//p1
-	if (inside(inte12[0], c3)){
-		points.push_back(inte12[0]);
-	}
-	else{
-		points.push_back(inte12[1]);
-	}
-	//p2
 	if (inside(inte23[0], c1)){
 		points.push_back(inte23[0]);
 	}
 	else{
 		points.push_back(inte23[1]);
 	}
-	//p3
+	//p2
 	if (inside(inte13[0], c2)){
 		points.push_back(inte13[0]);
 	}
 	else{
 		points.push_back(inte13[1]);
 	}
+	//p3
+	if (inside(inte12[0], c3)){
+		points.push_back(inte12[0]);
+	}
+	else{
+		points.push_back(inte12[1]);
+	}
 	return points;
 }
+
+
 
 
 
