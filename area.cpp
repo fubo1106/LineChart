@@ -94,6 +94,36 @@ void area::overlap()
     }
 }
 
+double area::getupperbound(const QVector<double> &px, const QVector<double> &py, double init){
+	double ub = init;
+	bool flag = false;
+
+	if (m_Points.size() != px.size()){
+		m_Points.clear();
+		for (int i = 0; i != px.size(); i++)
+		{
+			m_Points.push_back(QVector2D(px[i], py[i]));
+		}
+	}
+
+	while (!flag){
+		real_1d_array p;
+		p.setlength(2);
+
+		for (int i = 0; i < m_Points.size(); i++){
+			p[0] = m_Points[i].x();
+			p[1] = m_Points[i].y();
+			ae_int_t num = kdtreequeryrnn(m_kdtree, p, ub * 2);
+			if (num > 3){
+				flag = true;
+				break;
+			}
+		}	
+		ub += 0.2;
+	}
+	return ub - 0.2;
+}
+
 bool area::sametwo(const real_2d_array &p, const real_2d_array &q)
 {
     QVector2D a(p[0][0],p[0][1]);
@@ -173,19 +203,19 @@ double area::cal_overlapallthree(const real_2d_array &twopoints){
 	circle cc(m_r, c);
 	circlearea area;
 
-	QVector2D ab = b - a;
-	QVector2D ac = c - a;
-	//case1: 3 circles in a line
-	if (ab[0] / ac[0] == ab[1] / ac[1]){
-		real_2d_array common;
-		common.setlength(2, 2);
-		common(0, 0) = twopoints(1, 0);
-		common(0, 1) = twopoints(1, 1);
-		common(1, 0) = twopoints(2, 0);
-		common(1, 1) = twopoints(2, 1);
-		common_area = cal_overlaptwo(common);
+	QVector<QVector2D> insec_ab = area.intersection(aa, bb);
+	QVector<QVector2D> insec_ac = area.intersection(aa, cc);
+	QVector<QVector2D> insec_bc = area.intersection(bb, cc);
+
+	if (area.inside(insec_ab[0], cc) && area.inside(insec_ab[1], cc)){
+		common_area = area.cal_overlaptwo(aa, bb);
 	}
-	//case2: 3 circle not in a line
+	else if (area.inside(insec_ac[0], bb) && area.inside(insec_ac[1], bb)){
+		common_area = area.cal_overlaptwo(aa, cc);
+	}
+	else if (area.inside(insec_bc[0], aa) && area.inside(insec_bc[1], aa)){
+		common_area = area.cal_overlaptwo(bb, cc);
+	}
 	else{
 		QVector<QVector2D> points = area.intersection(aa, bb, cc); //see the return point format
 		double angle1 = cal_Angle(points[1], aa.mid(), points[2]); //angle in aa
@@ -193,19 +223,18 @@ double area::cal_overlapallthree(const real_2d_array &twopoints){
 		double angle3 = cal_Angle(points[0], cc.mid(), points[1]); //in cc
 
 		double triangle_area = cal_area_from_three_vetex(points[0], points[1], points[2]);
-		double sector1 = angle1 / 2 * m_r*m_r - cal_area_from_three_vetex(aa.mid(),points[1], points[2]);
+		double sector1 = angle1 / 2 * m_r*m_r - cal_area_from_three_vetex(aa.mid(), points[1], points[2]);
 		double sector2 = angle2 / 2 * m_r*m_r - cal_area_from_three_vetex(bb.mid(), points[0], points[2]);
 		double sector3 = angle3 / 2 * m_r*m_r - cal_area_from_three_vetex(cc.mid(), points[0], points[1]);
 
 		common_area = triangle_area + sector1 + sector2 + sector3;
 	}
-
 	return overlap - common_area;
 }
 
 double area::grad_overlapallthree(const real_2d_array &points){
 	double grad_all = grad_overlapthree(points);
-	double grad_common;
+	double grad_overlap;
 
 	QVector2D a(points(0, 0), points(0, 1));
 	QVector2D b(points(1, 0), points(1, 1));
@@ -216,23 +245,42 @@ double area::grad_overlapallthree(const real_2d_array &points){
 	circle cc(m_r, c);
 	circlearea area;
 
-	QVector2D ab = b - a;
-	QVector2D ac = c - a;
-	//case1: 3 circles in a line
-	if (ab[0] / ac[0] == ab[1] / ac[1]){
-		real_2d_array common;
-		common.setlength(2, 2);
-		common(0, 0) = points(1, 0);
-		common(0, 1) = points(1, 1);
-		common(1, 0) = points(2, 0);
-		common(1, 1) = points(2, 1);
-		grad_common = grad_overlaptwo(common);
+	QVector<QVector2D> insec_ab = area.intersection(aa, bb);
+	QVector<QVector2D> insec_ac = area.intersection(aa, cc);
+	QVector<QVector2D> insec_bc = area.intersection(bb, cc);
+
+	if (area.inside(insec_ab[0], cc) && area.inside(insec_ab[1], cc)){
+		grad_overlap = area.grad_overlaptwo(aa, bb);
 	}
-	//case2: 3 circle not in a line
-	else{
+	else if (area.inside(insec_ac[0], bb) && area.inside(insec_ac[1], bb)){
+		grad_overlap = area.grad_overlaptwo(aa, cc);
+	}
+	else if (area.inside(insec_bc[0], aa) && area.inside(insec_bc[1], aa)){
+		grad_overlap = area.grad_overlaptwo(bb, cc);
+	}
+	else{//look for the fomulation in word file
+		int root1, root2, root3;
+		QVector<QVector2D> points = area.intersection(aa, bb, cc, root1, root2, root3); //see the return point format
 		
+		//get intersection points pa,pb,pc;
+		QVector2D pa, pb, pc; 
+
+		QVector2D p1, p2, p3;
+		double D, del, a, b, c, d;
+		p1 = aa.mid();
+		p2 = bb.mid();
+		p3 = cc.mid();
+
+		double c1x = p1.x(); double c1y = p1.y();
+		double c2x = p2.x(); double c2y = p2.y();
+		double c3x = p3.x(); double c3y = p3.y();
+
+		D = (p1 - p2).length();
+		del = 0.25*D*sqrt(4 * m_r*m_r - D*D);
+
+		grad_overlap = area.grad_common(aa, bb, cc, root1, root2, root3);
 	}
-	return 0;
+	return grad_all - grad_overlap;
 }
 
 double area::cal_totalcirclearea()
@@ -269,8 +317,8 @@ double area::cal_percentcircleare(){
 		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);
 		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
-	vis_per_C = (sum_C - m_sumtwo)/sum_C;
-	return vis_per_C;
+	//vis_per_C = (sum_C - m_sumtwo)/sum_C;
+	return m_sumtwo;
 }
 
 double area::cal_Angle(const QVector2D &s, const QVector2D &o, const QVector2D &e)

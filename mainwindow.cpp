@@ -98,8 +98,10 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
     area *a=(area *)data;
     a->setR(alpha[0]);
     //grad[0]=2*M_PI*a->m_Points.size()*alpha[0]-a->grad_circle();
-	grad[0] = a->grad_percent_line() + a->grad_percent_circle();
-	printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
+	//grad[0] = a->grad_percent_line() + a->grad_percent_circle();
+	funcv = a->cal_percentcircleare();
+	grad[0] = a->grad_percent_circle();
+	//printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
 	//return a->cal_percentcircleare() + a->cal_percentlinearea();
 	return funcv;
@@ -393,7 +395,7 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 	for (int ii = 0; ii<numInitialization; ii++)
 	{
 		//double markersize = fabs(rand() / double(RAND_MAX));
-		double markersize = 7;
+		double markersize = 0.6;
 		double initaR = markersize;
 		double minf;
 		if (nlopt_optimize(opt, &markersize, &minf) < 0) {
@@ -423,9 +425,16 @@ double MainWindow::run()
 	double markerSize = ControlW->ui->MarkSize->value();
 	area *ardata = new area(PX, PY, lineWidth, markerSize);
     double lb =  0.5 ;//line size
+	double ub = ardata->getupperbound(PX, PY, lb);
+
+	if (markerSize < 2*lb || markerSize>2*ub){
+		printf("marker point size overflow!!!\n");
+		return 0;
+	}
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
     nlopt_set_lower_bounds(opt, &lb);
+	nlopt_set_upper_bounds(opt, &ub);
 
     nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
     nlopt_set_xtol_rel(opt, 1e-4);

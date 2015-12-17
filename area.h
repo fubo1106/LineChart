@@ -13,6 +13,7 @@ public:
     area(const QVector<double> &px,const QVector<double> &py,const double &linesize,const double &circlesize);
     void buildkdtree();
     void overlap();
+	double getupperbound(const QVector<double> &px, const QVector<double> &py, double init);
     bool sametwo(const alglib::real_2d_array &p,const alglib::real_2d_array &q);
     double cal_overlaptwo(const alglib::real_2d_array &twopoints);
 	double cal_overlapthree(const alglib::real_2d_array &twopoints);
