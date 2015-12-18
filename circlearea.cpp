@@ -234,6 +234,14 @@ bool circlearea::inside(QVector2D& p, circle& c){
 	return (p - cen).length() < c.r();
 }
 
+bool circlearea::isOverlap(circle& c1, circle& c2){
+	QVector2D p1 = c1.mid();
+	QVector2D p2 = c2.mid();
+	double D = (p1 - p2).length();
+
+	return ((c1.r() + c2.r()) > D && fabs(c1.r() - c2.r()) < D);
+}
+
 QVector<QVector2D> circlearea::intersection(circle& c1, circle& c2){
 	QVector2D p1 = c1.mid();
 	QVector2D p2 = c2.mid();

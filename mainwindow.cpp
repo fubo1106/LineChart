@@ -100,8 +100,9 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
     //grad[0]=2*M_PI*a->m_Points.size()*alpha[0]-a->grad_circle();
 	//grad[0] = a->grad_percent_line() + a->grad_percent_circle();
 	funcv = a->cal_percentcircleare();
-	grad[0] = a->grad_percent_circle();
+	grad[0] = a->grad_C;
 	//printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
+	printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare());
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
 	//return a->cal_percentcircleare() + a->cal_percentlinearea();
 	return funcv;
@@ -339,7 +340,7 @@ void MainWindow::loadCSVData(){
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
 	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74)));
-	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 5));
+	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(1)->setData(X, Y);
 	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
@@ -395,7 +396,7 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 	for (int ii = 0; ii<numInitialization; ii++)
 	{
 		//double markersize = fabs(rand() / double(RAND_MAX));
-		double markersize = 0.6;
+		double markersize = goodInit;
 		double initaR = markersize;
 		double minf;
 		if (nlopt_optimize(opt, &markersize, &minf) < 0) {
@@ -408,7 +409,7 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 				goodMS = markersize;
 				goodInit = initaR;
 			}
-			//printf("found minimum at f(%g) = %0.10g from initial %g\n", aspectRatio, minf, initaR);
+			printf("found minimum at f(%g) = %0.10g from initial %g\n", markersize, minf, initaR);
 
 		}
 	}
@@ -429,7 +430,7 @@ double MainWindow::run()
 
 	if (markerSize < 2*lb || markerSize>2*ub){
 		printf("marker point size overflow!!!\n");
-		return 0;
+		return markerSize;
 	}
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
@@ -461,11 +462,14 @@ double MainWindow::run()
 	double minMinf = 10e+6;
 	double minMindx = 1000;
 	double goodMS = 0;
-	double goodII = 0;
+	double goodII = ub;
 	runLocalOptimizer(opt, goodMS, goodII, minMinf);
     nlopt_destroy(opt);
     delete ardata;
-    return markersize;
+	printf("found optimal marker size:%f\n", goodMS);
+
+	return 2*goodMS;
+
 #endif
 	
 }

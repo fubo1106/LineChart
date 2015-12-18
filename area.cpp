@@ -65,7 +65,7 @@ void area::overlap()
             //qDebug()<<i;
             real_2d_array result;
             kdtreequeryresultsx(m_kdtree,result);
-            printf("overlap 2: pair:%[%f %f],[%f %f]\n", result[0][0], result[0][1], result[1][0], result[1][1]);
+            //printf("overlap 2: pair:%[%f %f],[%f %f]\n", result[0][0], result[0][1], result[1][0], result[1][1]);
             m_overlaptwopoint.push_back(result);
         }
         if(num==3)
@@ -73,7 +73,7 @@ void area::overlap()
             real_2d_array result;
             kdtreequeryresultsx(m_kdtree,result);
 			//printf("overlap 3: marker:[%f %f] pair:[%f %f] [%f %f]\n", p[0], p[1], result[0][0], result[0][1], result[1][0], result[1][1]);
-			printf("overlap 3: pair:[%f %f] [%f %f] [%f %f]\n", result(0, 0), result(0, 1), result(1, 0), result(1, 1), result(2, 0), result(2, 1));
+			//printf("overlap 3: pair:[%f %f] [%f %f] [%f %f]\n", result(0, 0), result(0, 1), result(1, 0), result(1, 1), result(2, 0), result(2, 1));
 			QVector2D a(result(1,0), result(1,1));
 			QVector2D b(result(2,0), result(2,1));
 			double len = (b - a).length();
@@ -97,7 +97,6 @@ void area::overlap()
 double area::getupperbound(const QVector<double> &px, const QVector<double> &py, double init){
 	double ub = init;
 	bool flag = false;
-
 	if (m_Points.size() != px.size()){
 		m_Points.clear();
 		for (int i = 0; i != px.size(); i++)
@@ -114,14 +113,14 @@ double area::getupperbound(const QVector<double> &px, const QVector<double> &py,
 			p[0] = m_Points[i].x();
 			p[1] = m_Points[i].y();
 			ae_int_t num = kdtreequeryrnn(m_kdtree, p, ub * 2);
-			if (num > 3){
+			if (num > 2){
 				flag = true;
 				break;
 			}
 		}	
-		ub += 0.2;
+		ub += 0.1;
 	}
-	return ub - 0.2;
+	return ub - 0.11;
 }
 
 bool area::sametwo(const real_2d_array &p, const real_2d_array &q)
@@ -148,6 +147,10 @@ double area::cal_overlaptwo(const real_2d_array &twopoints)
 //    double areaTri=(d/4)*qSqrt(4*qPow(m_r,2)-qPow(d,2));
 //    return areaSector-areaTri;
     return qPow(m_r,2)*(angel-qSin(angel));//another formular
+}
+
+double area::grad_Col(const double r, const double l){
+	return 2 * r*asin(l / (2 * r));
 }
 
 double area::grad_overlaptwo(const real_2d_array &twopoints){
@@ -376,20 +379,37 @@ double area::cal_totallinearea()
 }
 
 double area::cal_percentlinearea(){
-	m_Col = 0;
-	int numoverlaptwo = m_overlaptwopoint.size();
-	int numoverlapthree = m_overlapthreepoint.size();
-	int numoverlapallthree = m_overlapallthreepoint.size();
-	double m_Tri = 0;
-	m_Col = 2 * (m_Points.size() - numoverlaptwo - numoverlapthree - numoverlapallthree)*cal_Col(m_r, m_linesize);
-	for (int i = 1; i != m_Points.size() - 1; i++)//Lol
-	{
-		m_Tri += cal_Tri(m_Points[i - 1], m_Points[i], m_Points[i + 1]);
+	overlap_per_L = 0;
+	grad_L = 0;
+	circlearea area_c;
+
+	for (int i = 0; i < m_Points.size()-1; i++){
+		circle c1(m_r, m_Points[i]);
+		circle c2(m_r, m_Points[i + 1]);
+		if (area_c.isOverlap(c1, c2)){
+			if (m_r >= m_linesize / 2){//whole line is overlapped: Overlap=line_width*line_length
+				double x1 = m_Points[i].x();
+				double x2 = m_Points[i + 1].x();
+				double y1 = m_Points[i].y();
+				double y2 = m_Points[i + 1].y();
+				overlap_per_L += m_linesize*sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
+				//grad_C += 0;
+			}
+			else{//Overlap = 2*overlap(circle,line)-overlap(circle1,circle2)
+				overlap_per_L = 2 * cal_Col(m_r, m_linesize) - area_c.cal_overlaptwo(c1, c2);
+				grad_L += 2 * grad_Col(m_r, m_linesize) - area_c.grad_overlaptwo(c1, c2);
+			}
+		}
+		else{//2 circles have no ovelap: Overlap = 2*overlap(circle,line)
+			overlap_per_L += 2 * cal_Col(m_r, m_linesize);
+			grad_L += 2 * grad_Col(m_r, m_linesize);
+		}
 	}
-	vis_per_L = (m_length*m_linesize - m_Col - cal_coverline() + m_Tri) / sum_L;
+
+	//overlap_per_L = (m_length*m_linesize - m_Col - cal_coverline() + m_Tri) / sum_L;
 	
 	//return vis_per_L;
-	return 0;
+	return overlap_per_L;
 }
 
 double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){

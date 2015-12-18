@@ -31,6 +31,7 @@ public:
 
 public:
 	bool inside(QVector2D& p, circle& c);
+	bool isOverlap(circle& c1, circle& c2);
 	QVector<QVector2D> intersection(circle& c1, circle& c2);
 	QVector<QVector2D> intersection(circle& c1, circle& c2, circle& c3, int root1 = 0, int root2 = 0, int root3 = 0);
 	QVector<std::pair<QVector2D, QVector2D>> intersectPairs(circle& c1, circle& c2, circle& c3);

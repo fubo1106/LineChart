@@ -32,6 +32,8 @@ public:
 
     void fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr);
     void cal_grad();
+
+	double grad_Col(const double r, const double l);
 	double grad_overlaptwo(const real_2d_array &points);
 	double grad_overlapthree(const real_2d_array &points);
 	double grad_overlapallthree(const real_2d_array &points);
@@ -63,7 +65,7 @@ public:
     double vis_C;
 	double vis_per_C;
     double vis_L;
-	double vis_per_L;
+	double overlap_per_L;
 	double grad_C;
 	double grad_L;
 
