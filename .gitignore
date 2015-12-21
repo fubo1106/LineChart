@@ -14,8 +14,9 @@
 *.la
 *.lai
 *.so
-*.dll
+#*.dll
 *.dylib
+*.opensdf
 
 # Qt-es
 
