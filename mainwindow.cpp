@@ -102,7 +102,7 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
 	funcv = a->cal_percentcircleare();
 	grad[0] = a->grad_C;
 	//printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
-	printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare());
+	printf("grad:%f funcv: %f\n", grad[0], funcv);
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
 	//return a->cal_percentcircleare() + a->cal_percentlinearea();
 	return funcv;
@@ -121,6 +121,7 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->LineSize,SIGNAL(valueChanged(int)),this,SLOT(setLinesize(int)));
   QObject::connect(ControlW->ui->Aspect,SIGNAL(valueChanged(double)),this,SLOT(setAspect(double)));
   QObject::connect(ControlW->ui->background,SIGNAL(toggled(bool)),this,SLOT(setBackground(bool)));
+  QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(savePlot(bool)));
   QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadCSVData()));
   QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
@@ -143,6 +144,8 @@ void MainWindow::clearData(){
 	OX.clear(); OY.clear();
 	PX.clear(); PY.clear();
 	m_data.clear(); m_slopes.clear();
+	ui->customPlot->clearGraphs();
+	ui->customPlot->replot();
 }
 
 float MainWindow::dataProcessing()
@@ -196,6 +199,12 @@ void MainWindow::setBackground(bool b)
 {
     ui->customPlot->layer("grid")->setVisible(b);
     ui->customPlot->replot();
+}
+
+void MainWindow::savePlot(bool b)
+{
+	save = true;
+	//ui->customPlot->savePdf("figure.pdf");
 }
 
 void MainWindow::setZerolinex(double y)
@@ -386,6 +395,8 @@ void MainWindow::loadCSVData(){
 	double maxValue = newwidth;
 
 	//run();
+	if (save)
+		ui->customPlot->savePdf("figure-origin.pdf");
 	return;
 }
 
@@ -425,12 +436,13 @@ double MainWindow::run()
 	double lineWidth = ControlW->ui->LineSize->value();
 	double markerSize = ControlW->ui->MarkSize->value();
 	area *ardata = new area(PX, PY, lineWidth, markerSize);
-    double lb =  0.5 ;//line size
+	double lb = lineWidth / 2;//line size
 	double ub = ardata->getupperbound(PX, PY, lb);
 
 	if (markerSize < 2*lb || markerSize>2*ub){
-		printf("marker point size overflow!!!\n");
-		return markerSize;
+		/*printf("marker point size overflow!!!\n");
+		return markerSize;*/
+		markerSize = ub;
 	}
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
@@ -476,6 +488,8 @@ double MainWindow::run()
 
 void MainWindow::optMarker(){
 	setMarksize(run());
+	if (save)
+		ui->customPlot->savePdf("figure-opt.pdf");
 	return;
 }
 

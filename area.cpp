@@ -51,7 +51,8 @@ void area::buildkdtree()
 void area::overlap()
 {
     m_overlaptwopoint.clear();
-
+	m_overlapallthreepoint.clear();
+	m_overlapthreepoint.clear();
     for(int i=0;i!=m_Points.size();i++)
     {
         real_1d_array p;
@@ -106,21 +107,20 @@ double area::getupperbound(const QVector<double> &px, const QVector<double> &py,
 	}
 
 	while (!flag){
-		real_1d_array p;
-		p.setlength(2);
-
 		for (int i = 0; i < m_Points.size(); i++){
+			real_1d_array p;
+			p.setlength(2);
 			p[0] = m_Points[i].x();
 			p[1] = m_Points[i].y();
 			ae_int_t num = kdtreequeryrnn(m_kdtree, p, ub * 2);
 			if (num > 2){
 				flag = true;
 				break;
-			}
+			}	
 		}	
 		ub += 0.1;
 	}
-	return ub - 0.11;
+	return ub - 0.2;
 }
 
 bool area::sametwo(const real_2d_array &p, const real_2d_array &q)
@@ -158,11 +158,14 @@ double area::grad_overlaptwo(const real_2d_array &twopoints){
 	QVector2D b(twopoints[1][0], twopoints[1][1]);
 
 	double d = (b - a).length();
-	double acosTheta = acos(d / (2 * m_r));
+	double d_over_r = d / (2 * m_r);
+	double sqrt_one_minus_square_d_over_r = sqrt(1 - pow(d_over_r, 2));
+	double acosTheta = acos(d_over_r);
 	double rSquare = pow(m_r, 2);
 	double SquareMulSqrt = rSquare*sqrt(1 - pow(d, 2) / (4 * rSquare));
 
-	return rSquare*d*((1 - cos(2 * acosTheta)) / SquareMulSqrt) + 2 * m_r*(2 * acosTheta - sin(2 * acosTheta));
+	//return rSquare*d*((1 - cos(2 * acosTheta)) / SquareMulSqrt) + 2 * m_r*(2 * acosTheta - sin(2 * acosTheta)); //total area
+	return d*(1 - cos(2 * acosTheta)) / (M_PI*rSquare*sqrt_one_minus_square_d_over_r); //percent
 }
 
 double area::cal_overlapthree(const real_2d_array &twopoints){
@@ -305,10 +308,12 @@ double area::cal_totalcirclearea()
 
 double area::cal_percentcircleare(){
 	double m_sumtwo = 0;
+	double denominator = m_Points.size()*M_PI*m_r*m_r;
 	grad_C = 0;
 	overlap();
-	for (int i = 0; i<m_overlaptwopoint.size() - 1; i = i + 2)
+	for (int i = 0; i<m_overlaptwopoint.size(); i=i+2)
 	{	
+		//printf("%d: %s\n", i, m_overlaptwopoint[i].tostring(1).c_str());
 		m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
 		grad_C += grad_overlaptwo(m_overlaptwopoint[i]);
 	}
@@ -321,7 +326,7 @@ double area::cal_percentcircleare(){
 		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
 	//vis_per_C = (sum_C - m_sumtwo)/sum_C;
-	return m_sumtwo;
+	return (m_sumtwo * 2) / denominator;
 }
 
 double area::cal_Angle(const QVector2D &s, const QVector2D &o, const QVector2D &e)

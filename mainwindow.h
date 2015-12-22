@@ -71,6 +71,7 @@ public slots:
   void setLinesize(int i);
   void setAspect(double a);
   void setBackground(bool b);
+  void savePlot(bool b);
   void setZerolinex(double y);
   void setZeroliney(double x);
   void readDate();
@@ -86,6 +87,7 @@ private:
   int plotheight;
   double newwidth;
   double newheight;
+  bool save = false;
   QVector<double> X,OX,PX;
   QVector<double> Y,OY,PY;
   circlearea cr;

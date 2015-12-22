@@ -32,7 +32,7 @@ public:
     QLabel *label_3;
     QDoubleSpinBox *Aspect;
     QSpinBox *LineSize;
-    QRadioButton *background;
+    QRadioButton *save;
     QLabel *label_x;
     QLabel *label_y;
     QPushButton *btn_read;
@@ -47,6 +47,7 @@ public:
     QLabel *label_overlapL;
     QLabel *label_overlapR;
     QPushButton *btn_opt_marker;
+    QRadioButton *background;
 
     void setupUi(QWidget *Form)
     {
@@ -78,10 +79,10 @@ public:
         LineSize->setObjectName(QStringLiteral("LineSize"));
         LineSize->setGeometry(QRect(90, 240, 40, 20));
         LineSize->setValue(1);
-        background = new QRadioButton(Form);
-        background->setObjectName(QStringLiteral("background"));
-        background->setGeometry(QRect(30, 280, 89, 16));
-        background->setChecked(true);
+        save = new QRadioButton(Form);
+        save->setObjectName(QStringLiteral("save"));
+        save->setGeometry(QRect(20, 270, 89, 16));
+        save->setChecked(false);
         label_x = new QLabel(Form);
         label_x->setObjectName(QStringLiteral("label_x"));
         label_x->setGeometry(QRect(150, 280, 54, 12));
@@ -90,7 +91,7 @@ public:
         label_y->setGeometry(QRect(220, 280, 54, 12));
         btn_read = new QPushButton(Form);
         btn_read->setObjectName(QStringLiteral("btn_read"));
-        btn_read->setGeometry(QRect(30, 300, 75, 23));
+        btn_read->setGeometry(QRect(30, 310, 75, 23));
         label_rangeX = new QLabel(Form);
         label_rangeX->setObjectName(QStringLiteral("label_rangeX"));
         label_rangeX->setGeometry(QRect(150, 310, 171, 16));
@@ -129,7 +130,11 @@ public:
         label_overlapR->setGeometry(QRect(280, 10, 54, 12));
         btn_opt_marker = new QPushButton(Form);
         btn_opt_marker->setObjectName(QStringLiteral("btn_opt_marker"));
-        btn_opt_marker->setGeometry(QRect(30, 330, 75, 23));
+        btn_opt_marker->setGeometry(QRect(30, 340, 75, 23));
+        background = new QRadioButton(Form);
+        background->setObjectName(QStringLiteral("background"));
+        background->setGeometry(QRect(20, 290, 89, 16));
+        background->setChecked(true);
 
         retranslateUi(Form);
 
@@ -142,7 +147,7 @@ public:
         label->setText(QApplication::translate("Form", "Mark Size:", 0));
         label_2->setText(QApplication::translate("Form", "Line Size:", 0));
         label_3->setText(QApplication::translate("Form", "Aspect Radio:", 0));
-        background->setText(QApplication::translate("Form", "Background", 0));
+        save->setText(QApplication::translate("Form", "save", 0));
         label_x->setText(QApplication::translate("Form", "label_x", 0));
         label_y->setText(QApplication::translate("Form", "label_y", 0));
         btn_read->setText(QApplication::translate("Form", "loadData", 0));
@@ -155,6 +160,7 @@ public:
         label_overlapL->setText(QApplication::translate("Form", "OverlapL", 0));
         label_overlapR->setText(QApplication::translate("Form", "OverlapR", 0));
         btn_opt_marker->setText(QApplication::translate("Form", "OptMarker", 0));
+        background->setText(QApplication::translate("Form", "Background", 0));
     } // retranslateUi
 
 };
