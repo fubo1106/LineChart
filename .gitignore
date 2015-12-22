@@ -17,7 +17,7 @@
 #*.dll
 *.dylib
 *.opensdf
-
+*.csv
 # Qt-es
 
 *.pro.user

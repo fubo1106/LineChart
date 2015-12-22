@@ -153,6 +153,12 @@ double area::grad_Col(const double r, const double l){
 	return 2 * r*asin(l / (2 * r));
 }
 
+double grad_percent_Col(const double r, const double l){
+	double rSquare = pow(r, 2);
+	double lSquare_over_4rSquare = pow(l, 2) / (4 * r*r);
+	return -l*sqrt(1 - lSquare_over_4rSquare) / (M_PI*r*r);
+}
+
 double area::grad_overlaptwo(const real_2d_array &twopoints){
 	QVector2D a(twopoints[0][0], twopoints[0][1]);
 	QVector2D b(twopoints[1][0], twopoints[1][1]);
@@ -325,6 +331,9 @@ double area::cal_percentcircleare(){
 		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);
 		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
+	//plus the line's overlap
+	m_sumtwo += m_Points.size() * cal_Col(m_r, m_linesize);
+	grad_C += 2 * m_Points.size()*grad_percent_Col(m_r, m_linesize);
 	//vis_per_C = (sum_C - m_sumtwo)/sum_C;
 	return (m_sumtwo * 2) / denominator;
 }

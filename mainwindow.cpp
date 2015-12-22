@@ -102,7 +102,7 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
 	funcv = a->cal_percentcircleare();
 	grad[0] = a->grad_C;
 	//printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
-	printf("grad:%f funcv: %f\n", grad[0], funcv);
+	//printf("grad:%f funcv: %f\n", grad[0], funcv);
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
 	//return a->cal_percentcircleare() + a->cal_percentlinearea();
 	return funcv;
@@ -204,7 +204,7 @@ void MainWindow::setBackground(bool b)
 void MainWindow::savePlot(bool b)
 {
 	save = true;
-	//ui->customPlot->savePdf("figure.pdf");
+	ui->customPlot->savePdf("figure.pdf");
 }
 
 void MainWindow::setZerolinex(double y)
@@ -400,14 +400,14 @@ void MainWindow::loadCSVData(){
 	return;
 }
 
-void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &minMinf)
+void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &minMinf, double lb, double ub)
 {
 	int numInitialization = 20;
 	double minfunc = minMinf;
 	for (int ii = 0; ii<numInitialization; ii++)
 	{
-		//double markersize = fabs(rand() / double(RAND_MAX));
-		double markersize = goodInit;
+		double markersize = lb + fabs(rand() / double(RAND_MAX)) * (ub - lb);
+		//double markersize = goodInit;
 		double initaR = markersize;
 		double minf;
 		if (nlopt_optimize(opt, &markersize, &minf) < 0) {
@@ -475,7 +475,7 @@ double MainWindow::run()
 	double minMindx = 1000;
 	double goodMS = 0;
 	double goodII = ub;
-	runLocalOptimizer(opt, goodMS, goodII, minMinf);
+	runLocalOptimizer(opt, goodMS, goodII, minMinf, lb, ub);
     nlopt_destroy(opt);
     delete ardata;
 	printf("found optimal marker size:%f\n", goodMS);
@@ -487,9 +487,11 @@ double MainWindow::run()
 }
 
 void MainWindow::optMarker(){
-	setMarksize(run());
+	double markersize = run();
+	setMarksize(markersize);
 	if (save)
 		ui->customPlot->savePdf("figure-opt.pdf");
+	printf("optimal mark size: %f\n", markersize);
 	return;
 }
 
