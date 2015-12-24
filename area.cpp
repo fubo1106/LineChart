@@ -89,7 +89,7 @@ void area::overlap()
         }
         if(num>3)
         {
-            qDebug()<<num<<" "<<i<<" Mark size is too large";
+            //qDebug()<<num<<" "<<i<<" Mark size is too large";
 			//exit(0);
         }
     }
@@ -314,11 +314,13 @@ double area::cal_totalcirclearea()
 
 double area::cal_percentcircleare(){
 	double m_sumtwo = 0;
+	double m_sumline = 0;
 	double denominator = m_Points.size()*M_PI*m_r*m_r;
 	grad_C = 0;
 	overlap();
 	for (int i = 0; i<m_overlaptwopoint.size(); i=i+2)
-	{	
+	{	/*when 2 circles overlap, accurate overlap area should not be the sum of overlap(circle, circle)+overlap(line, circle)
+	it should also minus the overlap of 2 circles and the line, here we just use the sum of 2 areas for a bigger penalty when 2 circle has overlap*/
 		//printf("%d: %s\n", i, m_overlaptwopoint[i].tostring(1).c_str());
 		m_sumtwo += cal_overlaptwo(m_overlaptwopoint[i]);
 		grad_C += grad_overlaptwo(m_overlaptwopoint[i]);
@@ -332,8 +334,11 @@ double area::cal_percentcircleare(){
 		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
 	//plus the line's overlap
-	m_sumtwo += m_Points.size() * cal_Col(m_r, m_linesize);
-	grad_C += 2 * m_Points.size()*grad_percent_Col(m_r, m_linesize);
+	double circle_ratio = 0.1;
+	double line_ratio = 5;
+	m_sumline = m_Points.size() * cal_Col(m_r, m_linesize);
+	m_sumtwo = circle_ratio*m_sumtwo + line_ratio*m_sumline;
+	grad_C = 2 * (circle_ratio*grad_C + line_ratio*m_Points.size()*grad_percent_Col(m_r, m_linesize));
 	//vis_per_C = (sum_C - m_sumtwo)/sum_C;
 	return (m_sumtwo * 2) / denominator;
 }

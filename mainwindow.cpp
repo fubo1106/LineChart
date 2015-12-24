@@ -144,7 +144,8 @@ void MainWindow::clearData(){
 	OX.clear(); OY.clear();
 	PX.clear(); PY.clear();
 	m_data.clear(); m_slopes.clear();
-	ui->customPlot->clearGraphs();
+	ui->customPlot->clearPlottables();
+	ui->customPlot->rescaleAxes(true);
 	ui->customPlot->replot();
 }
 
@@ -345,10 +346,12 @@ void MainWindow::loadCSVData(){
 	}
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
-	ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
+	//ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
-	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74)));
+	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74))); //(0, 174, 74) (152, 185, 84) (79, 129, 189) (128, 100, 162) (247,150, 70) (201, 210, 0)
+	//pair <(0,172,238) (247, 160, 55) (0, 102, 54) (25, 115, 187)>
+	//pair <(255, 0, 0) (255, 165, 0)(0, 255, 0)>
 	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(1)->setData(X, Y);
@@ -443,13 +446,15 @@ double MainWindow::run()
 		/*printf("marker point size overflow!!!\n");
 		return markerSize;*/
 		markerSize = ub;
+		printf("marker radius should between [%f, %f]\n", lb, ub);
 	}
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
     nlopt_set_lower_bounds(opt, &lb);
 	nlopt_set_upper_bounds(opt, &ub);
 
-    nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
+    //nlopt_set_min_objective(opt, AMPfunc, (void *)ardata);
+	nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
     nlopt_set_xtol_rel(opt, 1e-4);
     double aspectRatio = 1.0005;
 	double markersize = markerSize;
@@ -478,7 +483,7 @@ double MainWindow::run()
 	runLocalOptimizer(opt, goodMS, goodII, minMinf, lb, ub);
     nlopt_destroy(opt);
     delete ardata;
-	printf("found optimal marker size:%f\n", goodMS);
+	printf("found optimal circle radius:%f\n", goodMS);
 
 	return 2*goodMS;
 

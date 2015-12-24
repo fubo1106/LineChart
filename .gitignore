@@ -18,6 +18,8 @@
 *.dylib
 *.opensdf
 *.csv
+*.pdf
+*.suo
 # Qt-es
 
 *.pro.user

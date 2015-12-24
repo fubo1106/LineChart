@@ -98,6 +98,7 @@ private:
   Banking *m_pBank;
   std::vector<std::pair<float,float>> m_data;
   std::vector<float> m_slopes;
+
 };
 
 #endif // MAINWINDOW_H
