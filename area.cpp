@@ -342,9 +342,9 @@ double area::cal_percentcircleare(){
 	grad_C = 2 * (circle_ratio*grad_C + line_ratio*m_Points.size()*grad_percent_Col(m_r, m_linesize));
 	return (m_sumtwo * 2) / denominator;
 #endif
-	/*only considering the overlap area of circles,(line does not have a overlap for circles),
-	this is for the new optimization framework: maxmize the visibility of marker+line*/
-#if 1
+	
+#if 0 /*only considering the overlap area of circles,(line does not have a overlap for circles),
+	 this is for the new optimization framework: maxmize the visibility of marker+line*/
 	double thresh = sum_L;//line=1437 circle=79.4
 	/*grad_C = (grad_C * 2 - 2 * numMarker*M_PI) / thresh;
 	return (m_sumtwo * 2 - numMarker*M_PI*m_r*m_r) / thresh;*/
@@ -352,6 +352,16 @@ double area::cal_percentcircleare(){
 	//use n*pi*r, avoid the r^2's big influence
 	grad_C = (grad_C * 2 - numMarker*M_PI) / thresh;
 	return (m_sumtwo * 2 - numMarker*M_PI*m_r) / thresh;
+#endif
+
+#if 1 /*add the the line's overlap for circles: line's overlap area only depends on circle's radius
+	  and line's width*/
+	double numerator = m_sumtwo * 2 + numMarker*cal_Col(m_r, m_linesize);
+	double grad_numerator = grad_C * 2 + numMarker*grad_Col(m_r, m_linesize);
+	double denominaor = sum_C;
+	double grad_denominator = 2 * numMarker*M_PI*m_r;
+	grad_C = (grad_numerator*denominaor - numerator*grad_denominator) / pow(denominaor, 2);
+	return (m_sumtwo * 2 + numMarker*cal_Col(m_r, m_linesize)) / sum_C;
 #endif
 }
 

@@ -27,7 +27,6 @@ public:
     double cal_coverline();
     double cal_totallinearea();
 	double cal_percentlinearea();
-
 	double cal_area_from_three_vetex(const QVector2D &s, const QVector2D &o, const QVector2D &e);
 
     void fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr);
