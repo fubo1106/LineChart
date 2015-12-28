@@ -97,11 +97,12 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
 	double funcv = 0;
     area *a=(area *)data;
     a->setR(alpha[0]);
-    //grad[0]=2*M_PI*a->m_Points.size()*alpha[0]-a->grad_circle();
-	//grad[0] = a->grad_percent_line() + a->grad_percent_circle();
-	funcv = a->cal_percentcircleare();
-	grad[0] = a->grad_C;
-	//printf("grad:%f funcv: %f\n", grad[0], a->cal_percentcircleare() + a->cal_percentlinearea());
+
+	//funcv = a->cal_percentcircleare();
+	//grad[0] = a->grad_C;
+
+	funcv = a->cal_percentcircleare() + a->cal_percentlinearea();
+	grad[0] = a->grad_C + a->grad_L;
 	//printf("grad:%f funcv: %f\n", grad[0], funcv);
     //return a->cal_totalcirclearea()+a->cal_totallinearea();
 	//return a->cal_percentcircleare() + a->cal_percentlinearea();
@@ -149,12 +150,24 @@ void MainWindow::clearData(){
 	ui->customPlot->replot();
 }
 
-float MainWindow::dataProcessing()
+void MainWindow::dataProcessing(const QVector<double>& OX, const QVector<double>& OY)
 {
-    m_data = loadData("data/co2-bank.csv");
-    //m_slopes = calcSlope(m_data);
-    float ratio = m_pBank->run(m_data,	MLC);
-    return ratio;
+    //m_data = loadData("data/co2-bank.csv");
+    ////m_slopes = calcSlope(m_data);
+    //float ratio = m_pBank->run(m_data,	MLC);
+    //return ratio;
+	int stride;
+	if (OX.size() <= 100){
+		MX = OX;
+		MY = OY;
+	}
+	else{
+		stride = ceil(OX.size() / 100.0);
+		for (int i = 0; i < OX.size(); i += stride){
+			MX.push_back(OX[i]);
+			MY.push_back(OY[i]);
+		}
+	}
 }
 
 void MainWindow::setMarksize(double d)
@@ -172,7 +185,7 @@ void MainWindow::setMarksize(double d)
     ControlW->ui->label_overlapL->setText(QString("%1").arg(m_area.cal_totallinearea()));
     ControlW->ui->label_overlapR->setText(QString("%1").arg(m_area.cal_totalcirclearea()+m_area.cal_totallinearea()));*/
 	
-	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, d));
+	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, d));
 	ui->customPlot->replot();
 }
 
@@ -344,6 +357,9 @@ void MainWindow::loadCSVData(){
 			}
 		}
 	}
+
+	dataProcessing(OX, OY);//get marker points
+
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
 	//ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
@@ -352,10 +368,12 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74))); //(0, 174, 74) (152, 185, 84) (79, 129, 189) (128, 100, 162) (247,150, 70) (201, 210, 0)
 	//pair <(0,172,238) (247, 160, 55) (0, 102, 54) (25, 115, 187)>
 	//pair <(255, 0, 0) (255, 165, 0)(0, 255, 0)>
-	ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
+	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->addGraph();
-	ui->customPlot->graph(1)->setData(X, Y);
+	ui->customPlot->graph(1)->setData(MX, MY);
 	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
+	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
+	ui->customPlot->graph(1)->setLineStyle(QCPGraph::lsNone);
 	//     ui->customPlot->graph(1)->setLineStyle(QCPGraph::LineStyle::lsLine);
 	qSort(X);//find maximum and minimum value of set X.
 	qSort(Y);
@@ -383,6 +401,13 @@ void MainWindow::loadCSVData(){
 	double changeX = pwidth / newwidth;
 	pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
 	double changeY = pheight / newheight;
+	/*for (int i = 0; i != X.size(); i++)
+	{
+		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
+		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
+		PX.push_back(tmpX);
+		PY.push_back(tmpY);
+	}*/
 	for (int i = 0; i != X.size(); i++)
 	{
 		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
@@ -438,15 +463,20 @@ double MainWindow::run()
 #if 1
 	double lineWidth = ControlW->ui->LineSize->value();
 	double markerSize = ControlW->ui->MarkSize->value();
+	//area *ardata = new area(PX, PY, lineWidth, markerSize);
 	area *ardata = new area(PX, PY, lineWidth, markerSize);
 	double lb = lineWidth / 2;//line size
 	double ub = ardata->getupperbound(PX, PY, lb);
-
+	if (lb <= ub)
+		printf("marker radius should between [%f, %f]\n", lb, ub);
+	else{
+		printf("cannot optimize marker radius: lb=%f and ub=%f", lb, ub);
+		return -1;
+	}
 	if (markerSize < 2*lb || markerSize>2*ub){
 		/*printf("marker point size overflow!!!\n");
 		return markerSize;*/
 		markerSize = ub;
-		printf("marker radius should between [%f, %f]\n", lb, ub);
 	}
     nlopt_opt opt;
     opt = nlopt_create(NLOPT_LD_MMA, 1);
@@ -493,10 +523,12 @@ double MainWindow::run()
 
 void MainWindow::optMarker(){
 	double markersize = run();
-	setMarksize(markersize);
-	if (save)
-		ui->customPlot->savePdf("figure-opt.pdf");
-	printf("optimal mark size: %f\n", markersize);
+	if (markersize != -1){
+		setMarksize(markersize);
+		if (save)
+			ui->customPlot->savePdf("figure-opt.pdf");
+		printf("optimal mark size: %f\n", markersize);
+	}	
 	return;
 }
 

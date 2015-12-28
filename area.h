@@ -60,6 +60,7 @@ public:
     double m_length;
     double m_Col;
     double m_CoC;
+	int numMarker;
     double sum_C;
     double sum_L;
     double vis_C;
@@ -68,7 +69,7 @@ public:
 	double overlap_per_L;
 	double grad_C;
 	double grad_L;
-
+	double grad_func;
 
 };
 

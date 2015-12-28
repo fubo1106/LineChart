@@ -63,7 +63,7 @@ class MainWindow : public QMainWindow
   
 public:
   explicit MainWindow(QWidget *parent = 0);
-  float dataProcessing();
+  void dataProcessing(const QVector<double>& OX, const QVector<double>& OY);
   Ui::MainWindow *ui;
   Form *ControlW;
 public slots:
@@ -88,8 +88,8 @@ private:
   double newwidth;
   double newheight;
   bool save = false;
-  QVector<double> X,OX,PX;
-  QVector<double> Y,OY,PY;
+  QVector<double> X,OX,PX,MX;
+  QVector<double> Y,OY,PY,MY;
   circlearea cr;
   linearea lr;
   area m_area;

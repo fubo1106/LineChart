@@ -21,7 +21,7 @@ area::area(const QVector<double> &px, const QVector<double> &py, const double &l
     m_length=0;
 	grad_C = 0;
 	grad_L = 0;
-
+	numMarker = px.size();
     for(int i=0;i!=px.size();i++)
     {
         m_Points.push_back(QVector2D(px[i],py[i]));
@@ -333,14 +333,26 @@ double area::cal_percentcircleare(){
 		m_sumtwo += cal_overlapallthree(m_overlapallthreepoint[i]);
 		grad_C += grad_overlapallthree(m_overlapallthreepoint[i]);
 	}
-	//plus the line's overlap
+	
+#if 0 //plus the line's overlap: previous code, calculating circle area = circlearea-overlap(cicle,circle)-overlap(line,circle);
 	double circle_ratio = 0.1;
 	double line_ratio = 5;
 	m_sumline = m_Points.size() * cal_Col(m_r, m_linesize);
 	m_sumtwo = circle_ratio*m_sumtwo + line_ratio*m_sumline;
 	grad_C = 2 * (circle_ratio*grad_C + line_ratio*m_Points.size()*grad_percent_Col(m_r, m_linesize));
-	//vis_per_C = (sum_C - m_sumtwo)/sum_C;
 	return (m_sumtwo * 2) / denominator;
+#endif
+	/*only considering the overlap area of circles,(line does not have a overlap for circles),
+	this is for the new optimization framework: maxmize the visibility of marker+line*/
+#if 1
+	double thresh = sum_L;//line=1437 circle=79.4
+	/*grad_C = (grad_C * 2 - 2 * numMarker*M_PI) / thresh;
+	return (m_sumtwo * 2 - numMarker*M_PI*m_r*m_r) / thresh;*/
+	
+	//use n*pi*r, avoid the r^2's big influence
+	grad_C = (grad_C * 2 - numMarker*M_PI) / thresh;
+	return (m_sumtwo * 2 - numMarker*M_PI*m_r) / thresh;
+#endif
 }
 
 double area::cal_Angle(const QVector2D &s, const QVector2D &o, const QVector2D &e)
@@ -426,9 +438,9 @@ double area::cal_percentlinearea(){
 	}
 
 	//overlap_per_L = (m_length*m_linesize - m_Col - cal_coverline() + m_Tri) / sum_L;
-	
+	grad_L /= sum_L;
 	//return vis_per_L;
-	return overlap_per_L;
+	return overlap_per_L / sum_L;
 }
 
 double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){
