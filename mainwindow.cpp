@@ -122,7 +122,7 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->LineSize,SIGNAL(valueChanged(int)),this,SLOT(setLinesize(int)));
   QObject::connect(ControlW->ui->Aspect,SIGNAL(valueChanged(double)),this,SLOT(setAspect(double)));
   QObject::connect(ControlW->ui->background,SIGNAL(toggled(bool)),this,SLOT(setBackground(bool)));
-  QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(savePlot(bool)));
+  QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(Notsave(bool)));
   QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadCSVData()));
   QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
@@ -132,7 +132,6 @@ MainWindow::MainWindow(QWidget *parent) :
   blank = 0;
   newwidth = plotwidth - 2 * blank;
   newheight = plotheight - 2 * blank;
-
   marginwidth=15*2;
   setGeometry(10, 40, plotwidth+marginwidth, plotheight+marginwidth);
 
@@ -216,10 +215,9 @@ void MainWindow::setBackground(bool b)
     ui->customPlot->replot();
 }
 
-void MainWindow::savePlot(bool b)
+void MainWindow::Notsave(bool b)
 {
-	save = true;
-	ui->customPlot->savePdf("figure.pdf");
+	save = false;
 }
 
 void MainWindow::setZerolinex(double y)
@@ -335,7 +333,7 @@ void MainWindow::readDate()
 void MainWindow::loadCSVData(){
 	clearData();
 	QString filename = QFileDialog::getOpenFileName(this, QString("Open File XY"), "data/");
-
+	fileName = filename.split('/').last().split('.').first();
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 		return;
@@ -426,8 +424,9 @@ void MainWindow::loadCSVData(){
 	double maxValue = newwidth;
 
 	//run();
-	if (save)
-		ui->customPlot->savePdf("figure-origin.pdf");
+	if (save){
+		ui->customPlot->savePdf(fileName + "_originMarker=" + QString::number(7) + ".pdf");
+	}	
 	return;
 }
 
@@ -529,7 +528,7 @@ void MainWindow::optMarker(){
 	if (markersize != -1){
 		setMarksize(markersize);
 		if (save)
-			ui->customPlot->savePdf("figure-opt.pdf");
+			ui->customPlot->savePdf(fileName + "_optMarker=" + QString::number(markersize) + ".pdf");
 		printf("optimal mark size: %f\n", markersize);
 	}	
 	return;

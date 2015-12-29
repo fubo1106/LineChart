@@ -104,6 +104,9 @@
    </property>
   </widget>
   <widget class="QRadioButton" name="save">
+   <property name="enabled">
+    <bool>true</bool>
+   </property>
    <property name="geometry">
     <rect>
      <x>20</x>
@@ -113,7 +116,7 @@
     </rect>
    </property>
    <property name="text">
-    <string>save</string>
+    <string>Not Save</string>
    </property>
    <property name="checked">
     <bool>false</bool>

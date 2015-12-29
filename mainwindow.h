@@ -71,7 +71,7 @@ public slots:
   void setLinesize(int i);
   void setAspect(double a);
   void setBackground(bool b);
-  void savePlot(bool b);
+  void Notsave(bool b);
   void setZerolinex(double y);
   void setZeroliney(double x);
   void readDate();
@@ -88,14 +88,14 @@ private:
   int blank;
   double newwidth;
   double newheight;
-  bool save = false;
+  bool save = true;
   QVector<double> X,OX,PX,MX;
   QVector<double> Y,OY,PY,MY;
   circlearea cr;
   linearea lr;
   area m_area;
 
-  QString demoName;
+  QString fileName;
   Banking *m_pBank;
   std::vector<std::pair<float,float>> m_data;
   std::vector<float> m_slopes;

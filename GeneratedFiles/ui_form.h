@@ -81,6 +81,7 @@ public:
         LineSize->setValue(1);
         save = new QRadioButton(Form);
         save->setObjectName(QStringLiteral("save"));
+        save->setEnabled(true);
         save->setGeometry(QRect(20, 270, 89, 16));
         save->setChecked(false);
         label_x = new QLabel(Form);
@@ -147,7 +148,7 @@ public:
         label->setText(QApplication::translate("Form", "Mark Size:", 0));
         label_2->setText(QApplication::translate("Form", "Line Size:", 0));
         label_3->setText(QApplication::translate("Form", "Aspect Radio:", 0));
-        save->setText(QApplication::translate("Form", "save", 0));
+        save->setText(QApplication::translate("Form", "Not Save", 0));
         label_x->setText(QApplication::translate("Form", "label_x", 0));
         label_y->setText(QApplication::translate("Form", "label_y", 0));
         btn_read->setText(QApplication::translate("Form", "loadData", 0));
