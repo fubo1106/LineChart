@@ -577,7 +577,14 @@ void QCPScatterStyle::drawShape(QCPPainter *painter, double x, double y) const
     }
     case ssSquare:
     {
+#if 0 //not filled
       painter->drawRect(QRectF(x-w, y-w, mSize, mSize));
+#else
+	  QBrush b = painter->brush();
+	  painter->setBrush(painter->pen().color());
+	  painter->drawRect(QRectF(x - w, y - w, mSize, mSize));
+	  painter->setBrush(b);
+#endif
       break;
     }
     case ssDiamond:

@@ -85,6 +85,7 @@ private:
   int marginwidth;
   int plotwidth;
   int plotheight;
+  int blank;
   double newwidth;
   double newheight;
   bool save = false;

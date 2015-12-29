@@ -129,8 +129,9 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
   plotwidth=300;
   plotheight=300;
-  newwidth=plotwidth;
-  newheight=plotheight;
+  blank = 0;
+  newwidth = plotwidth - 2 * blank;
+  newheight = plotheight - 2 * blank;
 
   marginwidth=15*2;
   setGeometry(10, 40, plotwidth+marginwidth, plotheight+marginwidth);
@@ -310,8 +311,8 @@ void MainWindow::readDate()
      double changeY=pheight/newheight;
      for(int i=0;i!=X.size();i++)
      {
-         double tmpX=(OX[i]-ui->customPlot->xAxis->range().lower)/changeX;
-         double tmpY=(OY[i]-ui->customPlot->yAxis->range().lower)/changeY;
+		 double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
+		 double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
          PX.push_back(tmpX);
          PY.push_back(tmpY);
      }
@@ -358,7 +359,7 @@ void MainWindow::loadCSVData(){
 		}
 	}
 
-	dataProcessing(OX, OY);//get marker points
+	//dataProcessing(OX, OY);//get marker points
 
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
@@ -366,11 +367,13 @@ void MainWindow::loadCSVData(){
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
 	ui->customPlot->graph(0)->setPen(QPen(QColor(0, 174, 74))); //(0, 174, 74) (152, 185, 84) (79, 129, 189) (128, 100, 162) (247,150, 70) (201, 210, 0)
-	//pair <(0,172,238) (247, 160, 55) (0, 102, 54) (25, 115, 187)>
-	//pair <(255, 0, 0) (255, 165, 0)(0, 255, 0)>
+	//pair <(0,172,238) (247, 160, 55) (0, 102, 54) (25, 115, 187)> google
+	//pair <(255, 0, 0) (255, 165, 0)(0, 255, 0)> google
+	//pair <(193, 80, 76) (155, 187, 88) (78, 129, 189) (129, 100, 163)> excel
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->addGraph();
-	ui->customPlot->graph(1)->setData(MX, MY);
+	//ui->customPlot->graph(1)->setData(MX, MY);
+	ui->customPlot->graph(1)->setData(X, Y);
 	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
 	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->graph(1)->setLineStyle(QCPGraph::lsNone);
@@ -384,12 +387,12 @@ void MainWindow::loadCSVData(){
 	//ui->customPlot->addGraph();
 	//ui->customPlot->graph(3)->drawZeroline(ControlW->ui->zerolinex->value(), Y);//set y
 
-	ui->customPlot->xAxis->setTicks(true);//Ticks invisiable
-	ui->customPlot->yAxis->setTicks(true);
+	ui->customPlot->xAxis->setTicks(false);//Ticks invisiable
+	ui->customPlot->yAxis->setTicks(false);
 	ui->customPlot->xAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));//Draw basic axis with dotline style
 	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));
-	ui->customPlot->xAxis->setTickLabels(true);
-	ui->customPlot->yAxis->setTickLabels(true);
+	ui->customPlot->xAxis->setTickLabels(false);
+	ui->customPlot->yAxis->setTickLabels(false);
 	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
 	ui->customPlot->yAxis->setRange(*Y.begin(), *(Y.end() - 1));
 	ControlW->ui->label_rangeX->setText(QString("X is from %1 to %2").arg(*X.begin()).arg(*(X.end() - 1)));
@@ -410,8 +413,8 @@ void MainWindow::loadCSVData(){
 	}*/
 	for (int i = 0; i != X.size(); i++)
 	{
-		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
-		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
+		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
+		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
 		PX.push_back(tmpX);
 		PY.push_back(tmpY);
 	}
