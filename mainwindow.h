@@ -76,6 +76,7 @@ public slots:
   void setZeroliney(double x);
   void readDate();
   void loadCSVData();
+  void optRatio();
   void optMarker();
   double run();
 private:

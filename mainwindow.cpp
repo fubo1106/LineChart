@@ -125,6 +125,7 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(Notsave(bool)));
   QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadCSVData()));
   QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
+  QObject::connect(ControlW->ui->btn_opt_ratio, SIGNAL(clicked(bool)), this, SLOT(optRatio()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
   plotwidth=300;
@@ -546,6 +547,12 @@ double MainWindow::run()
 
 #endif
 	
+}
+
+void MainWindow::optRatio(){
+	aspecRatio = getOptAspectRatio(X, Y);
+	printf("found optimal aspect ratio:%f\n", aspecRatio);
+	setAspect(aspecRatio);
 }
 
 void MainWindow::optMarker(){
