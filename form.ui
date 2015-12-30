@@ -296,8 +296,8 @@
   <widget class="QPushButton" name="btn_opt_ratio">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>300</y>
+     <x>20</x>
+     <y>330</y>
      <width>75</width>
      <height>23</height>
     </rect>

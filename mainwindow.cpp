@@ -362,6 +362,7 @@ void MainWindow::loadCSVData(){
 	QFile file(filename);
 	if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
 		return;
+	//printf("load %s\n", filename.toStdString());
 
 	while (!file.atEnd())
 	{
@@ -381,7 +382,8 @@ void MainWindow::loadCSVData(){
 			}
 		}
 	}
-
+	qDebug() << "loaded" << filename;
+	qDebug() << X.size() << "data points" << endl;
 	//dataProcessing(OX, OY);//get marker points
 
 	ui->customPlot->addGraph();

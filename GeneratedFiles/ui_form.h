@@ -127,7 +127,7 @@ public:
         background->setChecked(true);
         btn_opt_ratio = new QPushButton(Form);
         btn_opt_ratio->setObjectName(QStringLiteral("btn_opt_ratio"));
-        btn_opt_ratio->setGeometry(QRect(100, 300, 75, 23));
+        btn_opt_ratio->setGeometry(QRect(20, 330, 75, 23));
 
         retranslateUi(Form);
 
