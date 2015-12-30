@@ -130,6 +130,7 @@ MainWindow::MainWindow(QWidget *parent) :
   plotwidth=300;
   plotheight=300;
   blank = 0;
+  aspecRatio = 1;
   newwidth = plotwidth - 2 * blank;
   newheight = plotheight - 2 * blank;
   marginwidth=15*2;
@@ -150,13 +151,13 @@ void MainWindow::clearData(){
 	ui->customPlot->replot();
 }
 
-void MainWindow::dataProcessing(const QVector<double>& OX, const QVector<double>& OY)
+void MainWindow::dataProcessing(double ratio)
 {
     //m_data = loadData("data/co2-bank.csv");
     ////m_slopes = calcSlope(m_data);
     //float ratio = m_pBank->run(m_data,	MLC);
     //return ratio;
-	int stride;
+	/*int stride;
 	if (OX.size() <= 100){
 		MX = OX;
 		MY = OY;
@@ -167,6 +168,28 @@ void MainWindow::dataProcessing(const QVector<double>& OX, const QVector<double>
 			MX.push_back(OX[i]);
 			MY.push_back(OY[i]);
 		}
+	}*/
+	double width = newwidth / ratio;
+	double pwidth, pheight;
+	pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	double changeX = pwidth / width;
+	pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	double changeY = pheight / newheight;
+	/*for (int i = 0; i != X.size(); i++)
+	{
+	double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
+	double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
+	PX.push_back(tmpX);
+	PY.push_back(tmpY);
+	}*/
+	PX.clear();
+	PY.clear();
+	for (int i = 0; i != X.size(); i++)
+	{
+		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
+		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
+		PX.push_back(tmpX);
+		PY.push_back(tmpY);
 	}
 }
 
@@ -201,8 +224,9 @@ void MainWindow::setLinesize(int i)
 
 void MainWindow::setAspect(double a)
 {
-    newwidth=plotwidth/a;
+	newwidth = plotwidth / a;
     newheight=plotheight;
+	dataProcessing(a);
     setGeometry(10, 40, newwidth+marginwidth, newheight+marginwidth);
     ControlW->ui->label_x->setText(QString("x=%1").arg(newwidth));
     ControlW->ui->label_y->setText(QString("y=%1").arg(newheight));
@@ -397,25 +421,27 @@ void MainWindow::loadCSVData(){
 	ControlW->ui->label_rangeY->setText(QString("Y is from %1 to %2").arg(*Y.begin()).arg(*(Y.end() - 1)));
 	ui->customPlot->replot();
 
-	double pwidth, pheight;
-	pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
-	double changeX = pwidth / newwidth;
-	pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
-	double changeY = pheight / newheight;
-	/*for (int i = 0; i != X.size(); i++)
-	{
-		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
-		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
-		PX.push_back(tmpX);
-		PY.push_back(tmpY);
-	}*/
-	for (int i = 0; i != X.size(); i++)
-	{
-		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
-		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
-		PX.push_back(tmpX);
-		PY.push_back(tmpY);
-	}
+	dataProcessing(1);//default ratio=1;
+
+	//double pwidth, pheight;
+	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	//double changeX = pwidth / newwidth;
+	//pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	//double changeY = pheight / newheight;
+	///*for (int i = 0; i != X.size(); i++)
+	//{
+	//	double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX;
+	//	double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY;
+	//	PX.push_back(tmpX);
+	//	PY.push_back(tmpY);
+	//}*/
+	//for (int i = 0; i != X.size(); i++)
+	//{
+	//	double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
+	//	double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
+	//	PX.push_back(tmpX);
+	//	PY.push_back(tmpY);
+	//}
 
 	QVector<double> ls1, ls2, ls12;
 	//计算A，这里i就是a
@@ -425,7 +451,7 @@ void MainWindow::loadCSVData(){
 
 	//run();
 	if (save){
-		ui->customPlot->savePdf(fileName + "_originMarker=" + QString::number(7) + ".pdf");
+		ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(1) + "_originMarker=" + QString::number(7) + ".pdf");
 	}	
 	return;
 }
@@ -450,7 +476,7 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 				goodMS = markersize;
 				goodInit = initaR;
 			}
-			printf("found minimum at f(%g) = %0.10g from initial %g\n", markersize, minf, initaR);
+			//printf("found minimum at f(%g) = %0.10g from initial %g\n", markersize, minf, initaR);
 
 		}
 	}
@@ -458,10 +484,9 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 
 double MainWindow::run()
 {
-	//double as = getOptAspectRatio(X, Y);
-	//printf("optimal aspect ratio:%f\n", as);
-	//setAspect(as);
-	//return as;
+	/*aspecRatio = getOptAspectRatio(X, Y);
+	printf("found optimal aspect ratio:%f\n", aspecRatio);
+	setAspect(aspecRatio);*/
 #if 1
 	double lineWidth = ControlW->ui->LineSize->value();
 	double markerSize = ControlW->ui->MarkSize->value();
@@ -528,7 +553,7 @@ void MainWindow::optMarker(){
 	if (markersize != -1){
 		setMarksize(markersize);
 		if (save)
-			ui->customPlot->savePdf(fileName + "_optMarker=" + QString::number(markersize) + ".pdf");
+			ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(aspecRatio) + "_optMarker=" + QString::number(markersize) + ".pdf");
 		printf("optimal mark size: %f\n", markersize);
 	}	
 	return;

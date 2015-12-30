@@ -63,7 +63,7 @@ class MainWindow : public QMainWindow
   
 public:
   explicit MainWindow(QWidget *parent = 0);
-  void dataProcessing(const QVector<double>& OX, const QVector<double>& OY);
+  void dataProcessing(double ratio);
   Ui::MainWindow *ui;
   Form *ControlW;
 public slots:
@@ -97,6 +97,7 @@ private:
 
   QString fileName;
   Banking *m_pBank;
+  double aspecRatio;
   std::vector<std::pair<float,float>> m_data;
   std::vector<float> m_slopes;
 
