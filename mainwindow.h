@@ -63,7 +63,6 @@ class MainWindow : public QMainWindow
   
 public:
   explicit MainWindow(QWidget *parent = 0);
-  void dataProcessing(double ratio);
   Ui::MainWindow *ui;
   Form *ControlW;
 public slots:
@@ -82,6 +81,9 @@ public slots:
 private:
   std::vector<std::pair<float,float>> loadData(std::string strFile);
   void clearData();
+  void ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio); //change y value with ratio
+  void dataSelecting(); //select 100 data points
+  void saveFigure(double ratio, double markersize);
 
   int marginwidth;
   int plotwidth;

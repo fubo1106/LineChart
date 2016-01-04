@@ -60,6 +60,7 @@
 #include <area.h>
 #include "alglib3.9.0/src/optimization.h"
 #include "alglib3.9.0/src/stdafx.h"
+#include <direct.h>
 using namespace alglib;
 
 double getOptAspectRatio(const QVector<double>& dataX, const QVector<double>& dataY){
@@ -152,24 +153,13 @@ void MainWindow::clearData(){
 	ui->customPlot->replot();
 }
 
-void MainWindow::dataProcessing(double ratio)
+void MainWindow::ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio)
 {
     //m_data = loadData("data/co2-bank.csv");
     ////m_slopes = calcSlope(m_data);
     //float ratio = m_pBank->run(m_data,	MLC);
     //return ratio;
-	/*int stride;
-	if (OX.size() <= 100){
-		MX = OX;
-		MY = OY;
-	}
-	else{
-		stride = ceil(OX.size() / 100.0);
-		for (int i = 0; i < OX.size(); i += stride){
-			MX.push_back(OX[i]);
-			MY.push_back(OY[i]);
-		}
-	}*/
+	
 	double width = newwidth / ratio;
 	double pwidth, pheight;
 	pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
@@ -185,13 +175,47 @@ void MainWindow::dataProcessing(double ratio)
 	}*/
 	PX.clear();
 	PY.clear();
-	for (int i = 0; i != X.size(); i++)
+	for (int i = 0; i != OX.size(); i++)
 	{
 		double tmpX = (OX[i] - ui->customPlot->xAxis->range().lower) / changeX + blank;
 		double tmpY = (OY[i] - ui->customPlot->yAxis->range().lower) / changeY + blank;
 		PX.push_back(tmpX);
 		PY.push_back(tmpY);
 	}
+}
+
+void MainWindow::dataSelecting(){
+	int stride;
+	MX.clear();
+	MY.clear();
+	if (OX.size() <= 200){
+		MX = OX;
+		MY = OY;
+	}
+	//else{//uniform sampling
+	//	stride = floor(OX.size() / 100.0);
+	//	for (int i = 0; i < OX.size(); i += stride){
+	//		MX.push_back(OX[i]);
+	//		MY.push_back(OY[i]);
+	//	}
+	//}
+	else{//local extrema
+		for (int i = 1; i < OX.size() - 1; i++){
+			if ((OY[i] >= OY[i - 1] && OY[i] >= OY[i + 1]) || (OY[i] <= OY[i - 1] && OY[i] <= OY[i + 1])){
+				MX.push_back(OX[i]);
+				MY.push_back(OY[i]);
+			}
+		}
+	}
+	//printf("data selection: step=%d  data points=%d.\n", stride, MX.size());
+	printf("data selection: %d points.\n", MX.size());
+}
+
+void MainWindow::saveFigure(double ratio, double markersize){
+	char* dir = "result\\";
+	mkdir(dir);
+
+	ui->customPlot->savePdf(dir + fileName + "_ratio=" + QString::number(ratio) + "_originMarker=" + QString::number(markersize) + ".pdf");
 }
 
 void MainWindow::setMarksize(double d)
@@ -227,7 +251,7 @@ void MainWindow::setAspect(double a)
 {
 	newwidth = plotwidth / a;
     newheight=plotheight;
-	dataProcessing(a);
+	ratioData(OX, OY, a);
     setGeometry(10, 40, newwidth+marginwidth, newheight+marginwidth);
     ControlW->ui->label_x->setText(QString("x=%1").arg(newwidth));
     ControlW->ui->label_y->setText(QString("y=%1").arg(newheight));
@@ -383,8 +407,8 @@ void MainWindow::loadCSVData(){
 		}
 	}
 	qDebug() << "loaded" << filename;
-	qDebug() << X.size() << "data points" << endl;
-	//dataProcessing(OX, OY);//get marker points
+	qDebug() << X.size() << "data points";
+	dataSelecting();//get marker points to MX, MY
 
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
@@ -397,8 +421,8 @@ void MainWindow::loadCSVData(){
 	//pair <(193, 80, 76) (155, 187, 88) (78, 129, 189) (129, 100, 163)> excel
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->addGraph();
-	//ui->customPlot->graph(1)->setData(MX, MY);
-	ui->customPlot->graph(1)->setData(X, Y);
+	ui->customPlot->graph(1)->setData(MX, MY);
+	//ui->customPlot->graph(1)->setData(X, Y);
 	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
 	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
 	ui->customPlot->graph(1)->setLineStyle(QCPGraph::lsNone);
@@ -418,14 +442,14 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));
 	ui->customPlot->xAxis->setTickLabels(false);
 	ui->customPlot->yAxis->setTickLabels(false);
-	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
-	ui->customPlot->yAxis->setRange(*Y.begin(), *(Y.end() - 1));
+	ui->customPlot->xAxis->setRange(*MX.begin(), *(MX.end() - 1));
+	ui->customPlot->yAxis->setRange(*MY.begin(), *(MY.end() - 1));
 	ControlW->ui->label_rangeX->setText(QString("X is from %1 to %2").arg(*X.begin()).arg(*(X.end() - 1)));
 	ControlW->ui->label_rangeY->setText(QString("Y is from %1 to %2").arg(*Y.begin()).arg(*(Y.end() - 1)));
 	ui->customPlot->replot();
 
-	dataProcessing(1);//default ratio=1;
-
+	//ratioData(OX, OY, 1);//default ratio=1;
+	ratioData(MX, MY, 1);
 	//double pwidth, pheight;
 	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
 	//double changeX = pwidth / newwidth;
@@ -454,7 +478,8 @@ void MainWindow::loadCSVData(){
 
 	//run();
 	if (save){
-		ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(1) + "_originMarker=" + QString::number(7) + ".pdf");
+		saveFigure(1, 7);
+		//ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(1) + "_originMarker=" + QString::number(7) + ".pdf");
 	}	
 	return;
 }
@@ -561,8 +586,10 @@ void MainWindow::optMarker(){
 	double markersize = run();
 	if (markersize != -1){
 		setMarksize(markersize);
-		if (save)
-			ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(aspecRatio) + "_optMarker=" + QString::number(markersize) + ".pdf");
+		if (save){
+			saveFigure(aspecRatio, markersize);
+			//ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(aspecRatio) + "_optMarker=" + QString::number(markersize) + ".pdf");
+		}
 		printf("optimal mark size: %f\n", markersize);
 	}	
 	return;
