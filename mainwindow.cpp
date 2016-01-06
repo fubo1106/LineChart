@@ -159,12 +159,18 @@ void MainWindow::ratioData(const QVector<double>& OX, const QVector<double>& OY,
     ////m_slopes = calcSlope(m_data);
     //float ratio = m_pBank->run(m_data,	MLC);
     //return ratio;
-	
+	QVector<double> XX = OX;
+	QVector<double> YY = OY;
+	qSort(XX);
+	qSort(YY);
+
 	double width = newwidth / ratio;
 	double pwidth, pheight;
-	pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	pwidth = *(X.end() - 1) - *XX.begin();
 	double changeX = pwidth / width;
-	pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	//pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	pheight = *(YY.end() - 1) - *YY.begin();
 	double changeY = pheight / newheight;
 	/*for (int i = 0; i != X.size(); i++)
 	{
@@ -212,10 +218,12 @@ void MainWindow::dataSelecting(){
 }
 
 void MainWindow::saveFigure(double ratio, double markersize){
-	char* dir = "result\\";
-	mkdir(dir);
-
-	ui->customPlot->savePdf(dir + fileName + "_ratio=" + QString::number(ratio) + "_originMarker=" + QString::number(markersize) + ".pdf");
+	string dir = "result/";
+	QString dstfile = QString::fromStdString(dir) + fileName + "_ratio=" + QString::number(ratio) + "_originMarker=" + QString::number(markersize) + ".pdf";
+	
+	mkdir(dir.c_str());
+	ui->customPlot->savePdf(dstfile);
+	printf("save result into %s\n", dstfile.toStdString().c_str());
 }
 
 void MainWindow::setMarksize(double d)
@@ -442,8 +450,8 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));
 	ui->customPlot->xAxis->setTickLabels(false);
 	ui->customPlot->yAxis->setTickLabels(false);
-	ui->customPlot->xAxis->setRange(*MX.begin(), *(MX.end() - 1));
-	ui->customPlot->yAxis->setRange(*MY.begin(), *(MY.end() - 1));
+	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
+	ui->customPlot->yAxis->setRange(*Y.begin(), *(Y.end() - 1));
 	ControlW->ui->label_rangeX->setText(QString("X is from %1 to %2").arg(*X.begin()).arg(*(X.end() - 1)));
 	ControlW->ui->label_rangeY->setText(QString("Y is from %1 to %2").arg(*Y.begin()).arg(*(Y.end() - 1)));
 	ui->customPlot->replot();
