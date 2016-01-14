@@ -40,6 +40,36 @@ area::area(const QVector<double> &px, const QVector<double> &py, const double &l
     overlap();
 }
 
+area::area(const QVector<double> &px, const QVector<double> &py, const QVector<double> &all_px, const QVector<double> &all_py, const double &linesize, const double &circlesize){
+	m_linesize = linesize;
+	m_r = circlesize / 2;
+	m_CoC = 0;
+	m_Col = 0;
+	m_length = 0;
+	grad_C = 0;
+	grad_L = 0;
+	numMarker = px.size();
+	for (int i = 0; i != px.size(); i++)
+	{
+		m_Points.push_back(QVector2D(px[i], py[i]));
+		alg_Points.setlength(px.size(), 2);
+		alg_Points[i][0] = px[i];
+		alg_Points[i][1] = py[i];
+	}
+
+	
+	for (int i = 1; i != all_px.size(); i++)
+	{
+		m_length += sqrt(pow((all_px[i] - all_px[i - 1]), 2) + pow((all_py[i] - all_py[i - 1]), 2));
+		//m_length += (m_Points[i] - m_Points[i - 1]).length();
+	}
+
+	sum_C = M_PI*qPow(m_r, 2)*m_Points.size();
+	sum_L = m_linesize*m_length;
+	buildkdtree();
+	overlap();
+}
+
 void area::buildkdtree()
 {
     ae_int_t nx=2;

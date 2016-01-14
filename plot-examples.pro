@@ -36,7 +36,7 @@ SOURCES += main.cpp\
     area.cpp
 
 HEADERS  += mainwindow.h \
-         qcustomplot.h \
+    qcustomplot.h \
     computemin.h \
     form.h \
     linearea.h \
@@ -60,10 +60,11 @@ HEADERS  += mainwindow.h \
     circlearea.h \
     Banking.h \
     nlopt.h \
-    area.h
+    area.h \
+	entropy.h
 
 FORMS    += mainwindow.ui \
     form.ui
 
-LIBS     +=./libnlopt-0.lib
+LIBS     += libnlopt-0.lib
 

@@ -11,6 +11,7 @@ class area
 public:
     area();
     area(const QVector<double> &px,const QVector<double> &py,const double &linesize,const double &circlesize);
+	area(const QVector<double> &px, const QVector<double> &py, const QVector<double> &all_px, const QVector<double> &all_py, const double &linesize, const double &circlesize);
     void buildkdtree();
     void overlap();
 	double getupperbound(const QVector<double> &px, const QVector<double> &py, double init);

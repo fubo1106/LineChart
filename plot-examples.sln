@@ -3,18 +3,22 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 2013
 VisualStudioVersion = 12.0.30501.0
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plot-examples", "plot-examples.vcxproj", "{121DE2DC-D3EA-30C9-8BBC-3F2344A59447}"
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "plot-examples", "plot-examples.vcxproj", "{A01028D0-1619-343B-ADAB-65245A313DEB}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Win32 = Debug|Win32
+		Debug|x64 = Debug|x64
 		Release|Win32 = Release|Win32
+		Release|x64 = Release|x64
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{121DE2DC-D3EA-30C9-8BBC-3F2344A59447}.Debug|Win32.ActiveCfg = Debug|Win32
-		{121DE2DC-D3EA-30C9-8BBC-3F2344A59447}.Debug|Win32.Build.0 = Debug|Win32
-		{121DE2DC-D3EA-30C9-8BBC-3F2344A59447}.Release|Win32.ActiveCfg = Release|Win32
-		{121DE2DC-D3EA-30C9-8BBC-3F2344A59447}.Release|Win32.Build.0 = Release|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Debug|Win32.ActiveCfg = Debug|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Debug|Win32.Build.0 = Debug|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Debug|x64.ActiveCfg = Debug|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Release|Win32.ActiveCfg = Release|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Release|Win32.Build.0 = Release|Win32
+		{A01028D0-1619-343B-ADAB-65245A313DEB}.Release|x64.ActiveCfg = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -129,8 +129,8 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->btn_opt_ratio, SIGNAL(clicked(bool)), this, SLOT(optRatio()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
-  plotwidth=300;
-  plotheight=300;
+  plotwidth=500;
+  plotheight=500;
   blank = 0;
   aspecRatio = 1;
   newwidth = plotwidth - 2 * blank;
@@ -190,14 +190,13 @@ void MainWindow::ratioData(const QVector<double>& OX, const QVector<double>& OY,
 	}
 }
 
-void MainWindow::dataSelecting(){
-	int stride;
+void MainWindow::dataSelecting(int stride){
 	MX.clear();
 	MY.clear();
-	if (OX.size() <= 200){
+	/*if (OX.size() <= 200){
 		MX = OX;
 		MY = OY;
-	}
+	}*/
 	//else{//uniform sampling
 	//	stride = floor(OX.size() / 100.0);
 	//	for (int i = 0; i < OX.size(); i += stride){
@@ -205,21 +204,38 @@ void MainWindow::dataSelecting(){
 	//		MY.push_back(OY[i]);
 	//	}
 	//}
-	else{//local extrema
-		for (int i = 1; i < OX.size() - 1; i++){
-			if ((OY[i] >= OY[i - 1] && OY[i] >= OY[i + 1]) || (OY[i] <= OY[i - 1] && OY[i] <= OY[i + 1])){
-				MX.push_back(OX[i]);
-				MY.push_back(OY[i]);
-			}
+	//else{//local extrema
+	//	for (int i = 1; i < OX.size() - 1; i++){
+	//		if ((OY[i] >= OY[i - 1] && OY[i] >= OY[i + 1]) || (OY[i] <= OY[i - 1] && OY[i] <= OY[i + 1])){
+	//			MX.push_back(OX[i]);
+	//			MY.push_back(OY[i]);
+	//		}
+	//	}
+	//}
+	//else{//different stride
+		//int stride = 6;
+		for (int i = 0; i < OX.size(); i=i+stride){
+			MX.push_back(OX[i]);
+			MY.push_back(OY[i]);
 		}
-	}
+	//}
 	//printf("data selection: step=%d  data points=%d.\n", stride, MX.size());
 	printf("data selection: %d points.\n", MX.size());
 }
 
-void MainWindow::saveFigure(double ratio, double markersize){
+void MainWindow::dataSelecting(QVector<int>& indexes){
+	MX.clear();
+	MY.clear();
+	for (int i = 0; i < indexes.size(); i++){
+		MX.push_back(OX[indexes[i]]);
+		MY.push_back(OY[indexes[i]]);
+	}
+	printf("data selection: %d points.\n", MX.size());
+}
+
+void MainWindow::saveFigure(double ratio, double markersize, int sampleStep){
 	string dir = "result/";
-	QString dstfile = QString::fromStdString(dir) + fileName + "_ratio=" + QString::number(ratio) + "_originMarker=" + QString::number(markersize) + ".pdf";
+	QString dstfile = QString::fromStdString(dir) + fileName + "_ratio=" + QString::number(ratio) + "_originMarker=" + QString::number(markersize) + "_sampleStep=" + QString::number(sampleStep) + ".pdf";
 	
 	mkdir(dir.c_str());
 	ui->customPlot->savePdf(dstfile);
@@ -260,6 +276,7 @@ void MainWindow::setAspect(double a)
 	newwidth = plotwidth / a;
     newheight=plotheight;
 	ratioData(OX, OY, a);
+	ratioData(MX, MY, a);
     setGeometry(10, 40, newwidth+marginwidth, newheight+marginwidth);
     ControlW->ui->label_x->setText(QString("x=%1").arg(newwidth));
     ControlW->ui->label_y->setText(QString("y=%1").arg(newheight));
@@ -416,7 +433,11 @@ void MainWindow::loadCSVData(){
 	}
 	qDebug() << "loaded" << filename;
 	qDebug() << X.size() << "data points";
-	dataSelecting();//get marker points to MX, MY
+
+	entropy entro(OX, OY);
+	QVector<int> indexes;
+	entro.sample_by_entropy(indexes);
+	dataSelecting(indexes);//get marker points to MX, MY
 
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
@@ -447,7 +468,7 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->xAxis->setTicks(false);//Ticks invisiable
 	ui->customPlot->yAxis->setTicks(false);
 	ui->customPlot->xAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));//Draw basic axis with dotline style
-	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine));
+	ui->customPlot->yAxis->setBasePen(QPen(QColor(0, 174, 74), 0, Qt::DotLine ));
 	ui->customPlot->xAxis->setTickLabels(false);
 	ui->customPlot->yAxis->setTickLabels(false);
 	ui->customPlot->xAxis->setRange(*X.begin(), *(X.end() - 1));
@@ -457,7 +478,8 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->replot();
 
 	//ratioData(OX, OY, 1);//default ratio=1;
-	ratioData(MX, MY, 1);
+	//ratioData(MX, MY, 2/3.);
+	setAspect(3 / 3.);
 	//double pwidth, pheight;
 	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
 	//double changeX = pwidth / newwidth;
@@ -501,7 +523,7 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 		double markersize = lb + fabs(rand() / double(RAND_MAX)) * (ub - lb);
 		//double markersize = goodInit;
 		double initaR = markersize;
-		double minf;
+		double minf = 1;
 		if (nlopt_optimize(opt, &markersize, &minf) < 0) {
 			printf("nlopt failed!\n");
 		}
@@ -518,67 +540,80 @@ void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &
 	}
 }
 
-double MainWindow::run()
+double MainWindow::run(int &goodStep)
 {
 	/*aspecRatio = getOptAspectRatio(X, Y);
 	printf("found optimal aspect ratio:%f\n", aspecRatio);
 	setAspect(aspecRatio);*/
 #if 1
-	double lineWidth = ControlW->ui->LineSize->value();
-	double markerSize = ControlW->ui->MarkSize->value();
-	//area *ardata = new area(PX, PY, lineWidth, markerSize);
-	area *ardata = new area(PX, PY, lineWidth, markerSize);
-	double lb = lineWidth / 2;//line size
-	double ub = ardata->getupperbound(PX, PY, lb);
-	if (lb <= ub)
-		printf("marker radius should between [%f, %f]\n", lb, ub);
-	else{
-		printf("cannot optimize marker radius: lb=%f and ub=%f", lb, ub);
-		return -1;
-	}
-	if (markerSize < 2*lb || markerSize>2*ub){
-		/*printf("marker point size overflow!!!\n");
-		return markerSize;*/
-		markerSize = ub;
-	}
-    nlopt_opt opt;
-    opt = nlopt_create(NLOPT_LD_MMA, 1);
-    nlopt_set_lower_bounds(opt, &lb);
-	nlopt_set_upper_bounds(opt, &ub);
+	double minf = 1; //minmum overlap percentage
+	double optMS = 0;
+	for (int step = 1; step < OX.size() - 1; step++){
+		double lineWidth = ControlW->ui->LineSize->value();
+		double markerSize = ControlW->ui->MarkSize->value();
+		double lb = lineWidth / 2;//line size
+		//area *ardata = new area(PX, PY, lineWidth, markerSize);
+		dataSelecting(step);
+		setAspect();
+		area *ardata = new area(PX, PY, lineWidth, markerSize);
+		double ub = ardata->getupperbound(PX, PY, lb);
+		if (lb <= ub)
+			printf("marker radius should between [%f, %f]\n", lb, ub);
+		else{
+			printf("cannot optimize marker radius: lb=%f and ub=%f, step++\n", lb, ub);
+			//return -1;
+			continue;
+		}
+		if (markerSize < 2 * lb || markerSize>2 * ub){
+			/*printf("marker point size overflow!!!\n");
+			return markerSize;*/
+			markerSize = ub;
+		}
+		nlopt_opt opt;
+		opt = nlopt_create(NLOPT_LD_MMA, 1);
+		nlopt_set_lower_bounds(opt, &lb);
+		nlopt_set_upper_bounds(opt, &ub);
 
-    //nlopt_set_min_objective(opt, AMPfunc, (void *)ardata);
-	nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
-    nlopt_set_xtol_rel(opt, 1e-4);
-    double aspectRatio = 1.0005;
-	double markersize = markerSize;
-    double minf;
+		//nlopt_set_min_objective(opt, AMPfunc, (void *)ardata);
+		nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
+		nlopt_set_xtol_rel(opt, 1e-2);
+		double aspectRatio = 1.0005;
+		double markersize = markerSize;
 
-	/*aspect ratio optimization*/
-    /*if (nlopt_optimize(opt, &aspectRatio, &minf) < 0) {
-        printf("nlopt failed!\n");
-    }
-    else {
-        printf("found minimum at f(%g) = %0.10g\n", aspectRatio, minf);
-    }*/
-
-	/*marker size optimization*/
-	/*if (nlopt_optimize(opt, &markersize, &minf) < 0) {
+		/*aspect ratio optimization*/
+		/*if (nlopt_optimize(opt, &aspectRatio, &minf) < 0) {
 		printf("nlopt failed!\n");
-	}
-	else {
+		}
+		else {
+		printf("found minimum at f(%g) = %0.10g\n", aspectRatio, minf);
+		}*/
+
+		/*marker size optimization*/
+		/*if (nlopt_optimize(opt, &markersize, &minf) < 0) {
+		printf("nlopt failed!\n");
+		}
+		else {
 		printf("found minimum at f(%g) = %0.10g\n", markersize, minf);
-	}*/
+		}*/
 
-	double minMinf = 10e+6;
-	double minMindx = 1000;
-	double goodMS = 0;
-	double goodII = ub;
-	runLocalOptimizer(opt, goodMS, goodII, minMinf, lb, ub);
-    nlopt_destroy(opt);
-    delete ardata;
-	printf("found optimal circle radius:%f\n", goodMS);
-
-	return 2*goodMS;
+		double minMinf = 10e+6;
+		double minMindx = 1000;
+		double goodMS = 0;
+		double goodII = ub;
+		runLocalOptimizer(opt, goodMS, goodII, minMinf, lb, ub);
+		printf("found optimal circle radius=%f at step=%d minimum function value=%f\n", goodMS, step, minMinf);
+		nlopt_destroy(opt);
+		delete ardata;
+		if (minMinf > minf)
+			break;
+		else{
+			minf = minMinf;
+			optMS = goodMS;
+			goodStep = step;
+		}
+	}
+	printf("\nfound final circle radius:%f at step=%d minimum function value:%f\n", optMS, goodStep, minf);
+	return 2 * optMS;
 
 #endif
 	
@@ -591,11 +626,18 @@ void MainWindow::optRatio(){
 }
 
 void MainWindow::optMarker(){
-	double markersize = run();
+	int goodStep;
+	double markersize = run(goodStep);
 	if (markersize != -1){
+		//replot qcustomPlot
+		dataSelecting(goodStep);
+		ui->customPlot->graph(1)->setData(MX, MY);
+		ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
+		ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
+		ui->customPlot->graph(1)->setLineStyle(QCPGraph::lsNone);
 		setMarksize(markersize);
 		if (save){
-			saveFigure(aspecRatio, markersize);
+			saveFigure(aspecRatio, markersize, goodStep);
 			//ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(aspecRatio) + "_optMarker=" + QString::number(markersize) + ".pdf");
 		}
 		printf("optimal mark size: %f\n", markersize);

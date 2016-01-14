@@ -53,6 +53,7 @@
 #include "linearea.h"
 #include <Banking.h>
 #include "area.h"
+#include "entropy.h"
 namespace Ui {
 class MainWindow;
 }
@@ -68,7 +69,7 @@ public:
 public slots:
   void setMarksize(double d);
   void setLinesize(int i);
-  void setAspect(double a);
+  void setAspect(double a = 1);
   void setBackground(bool b);
   void Notsave(bool b);
   void setZerolinex(double y);
@@ -77,13 +78,14 @@ public slots:
   void loadCSVData();
   void optRatio();
   void optMarker();
-  double run();
+  double run(int &goodStep);
 private:
   std::vector<std::pair<float,float>> loadData(std::string strFile);
   void clearData();
   void ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio); //change y value with ratio
-  void dataSelecting(); //select 100 data points
-  void saveFigure(double ratio, double markersize);
+  void dataSelecting(int stride); //select 100 data points
+  void dataSelecting(QVector<int>& indexes);
+  void saveFigure(double ratio, double markersize, int sampleStep = 1);
 
   int marginwidth;
   int plotwidth;
