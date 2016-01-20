@@ -12,7 +12,7 @@ area::area()
 
 }
 
-area::area(const QVector<double> &px, const QVector<double> &py, const double &linesize, const double &circlesize)
+area::area(const QVector<double> &px, const QVector<double> &py, const double &linesize, const double &circlesize, int display_width, int display_height)
 {
     m_linesize=linesize;
     m_r=circlesize/2;
@@ -21,6 +21,8 @@ area::area(const QVector<double> &px, const QVector<double> &py, const double &l
     m_length=0;
 	grad_C = 0;
 	grad_L = 0;
+	displayWidth = display_width;
+	displayHeight = display_height;
 	numMarker = px.size();
     for(int i=0;i!=px.size();i++)
     {
@@ -395,6 +397,36 @@ double area::cal_percentcircleare(){
 #endif
 }
 
+double area::cal_circle_entropy(){
+	//calculate individual(no overlap) term 1
+	int individualMarker = numMarker - m_overlaptwopoint.size();
+	double overlap_ml = cal_Col(m_r, m_linesize);//overlap between line and marker
+	double prob_ml_overlap = 1. / numMarker - overlap_ml / sum_C; //probabilty term of overlap between marker 
+	double log_prob_ml_overlap = log2(prob_ml_overlap);
+	double individual_marker_entropy = individualMarker * prob_ml_overlap *log_prob_ml_overlap;
+
+	double derivative_prob_ml_overlap = -(grad_Col(m_r, m_linesize)*sum_C - overlap_ml*(2 * numMarker*M_PI*m_r)) / pow(sum_C, 2);
+	double derivative_logprob_ml_overlap = derivative_prob_ml_overlap / (prob_ml_overlap*log(2));
+	double derivative_individual_marker_entropy = individualMarker * (derivative_prob_ml_overlap*log_prob_ml_overlap + prob_ml_overlap*derivative_logprob_ml_overlap);
+
+	//calculate circles has overlap area term 2
+	double overlap_marker_entropy = 0;
+	double derivative_overlap_marker_entropy = 0;
+	for (int i = 0; i < m_overlaptwopoint.size(); i = i + 2){//overlap 2 circles
+		double overlap_mm = cal_overlaptwo(m_overlaptwopoint[i]);
+		double prob_overlap = prob_ml_overlap - overlap_mm / sum_C;
+		overlap_marker_entropy += prob_overlap*log2(prob_overlap);
+
+		double derivative_prob_overlap = derivative_prob_ml_overlap - (grad_overlaptwo(m_overlaptwopoint[i])*sum_C - overlap_mm*(2 * numMarker*M_PI*m_r)) / pow(sum_C, 2);
+		double derivative_logprob_overlap = derivative_prob_overlap / (prob_overlap*log(2));
+		//double derivative_prob_overlap = (grad_overlaptwo(m_overlaptwopoint[i])*sum_C - overlap_mm*(2 * numMarker*M_PI*m_r)) / pow(sum_C, 2);
+		derivative_overlap_marker_entropy += derivative_prob_overlap*log2(prob_overlap) + prob_overlap*derivative_logprob_overlap;
+
+	}
+	derivative_circle_entropy = derivative_individual_marker_entropy + 2 * derivative_overlap_marker_entropy;
+	return individual_marker_entropy + 2 * overlap_marker_entropy;
+}
+
 double area::cal_Angle(const QVector2D &s, const QVector2D &o, const QVector2D &e)
 {
     double c=(o-s).length();
@@ -481,6 +513,97 @@ double area::cal_percentlinearea(){
 	grad_L /= sum_L;
 	//return vis_per_L;
 	return overlap_per_L / sum_L;
+}
+
+/*calculate line entropy and its derivative, refer to the formulation in "optimization_Max_Visual_Entropy.docx"*/
+double area::cal_line_entropy(){
+	double line_entropy = 0;
+	derivative_line_entropy = 0;
+#if 0 //simply 2 circles don't have overlap
+	for (int i = 0; i < m_Points.size() - 1; i++){
+		double len = (m_Points[i + 1] - m_Points[i]).length();
+		double lineArea = len*m_linesize;
+		double overlap_ml = cal_Col(m_r, m_linesize);//overlap between line and marker	
+		double prob_lineArea = (lineArea - 2 * overlap_ml) / sum_L;
+		if (prob_lineArea > 0)//easy case
+			line_entropy += prob_lineArea * log2(prob_lineArea);
+
+		double derivative_overlap_ml = grad_Col(m_r, m_linesize);
+		double derivative_probLineArea = -2 * derivative_overlap_ml / sum_L;
+		double derivative_log_probLineArea = derivative_probLineArea / (prob_lineArea*log(2));
+
+		if (prob_lineArea > 0)//easy case
+			derivative_line_entropy += derivative_probLineArea*log2(prob_lineArea) + prob_lineArea*derivative_log_probLineArea;
+	}
+#else //add cases that 2 circles have overlap 
+	circlearea area_c;
+	double len;
+	double lineArea;
+	double overlap_ml;
+	double overlap_mm;
+	double prob_lineArea;
+	double derivative_overlap_ml;
+	double derivative_overlap_mm;
+	double derivative_probLineArea;
+	double derivative_log_probLineArea;
+	for (int i = 0; i < m_Points.size() - 1; i++){
+		circle c1(m_r, m_Points[i]);
+		circle c2(m_r, m_Points[i + 1]);
+
+		if (area_c.isOverlap(c1, c2)){
+			if (m_r >= m_linesize / 2){//whole line is overlapped: Overlap=line_width*line_length
+				double x1 = m_Points[i].x();
+				double x2 = m_Points[i + 1].x();
+				double y1 = m_Points[i].y();
+				double y2 = m_Points[i + 1].y();
+				overlap_per_L += m_linesize*sqrt(pow((x2 - x1), 2) + pow((y2 - y1), 2));
+				//grad_C += 0;
+			}
+			else{//Overlap = 2*overlap(circle,line)-overlap(circle1,circle2)
+				len = (m_Points[i + 1] - m_Points[i]).length();
+				lineArea = len*m_linesize;
+				overlap_ml = cal_Col(m_r, m_linesize);
+				overlap_mm = area_c.cal_overlaptwo(c1, c2);
+				prob_lineArea = (lineArea - 2 * overlap_ml + overlap_mm) / sum_L;
+				line_entropy += prob_lineArea * log2(prob_lineArea);
+
+				derivative_overlap_ml = grad_Col(m_r, m_linesize);
+				derivative_overlap_mm = area_c.grad_overlaptwo(c1, c2);
+				derivative_probLineArea = (-2 * derivative_overlap_ml + derivative_overlap_mm) / sum_L;
+				derivative_log_probLineArea = derivative_probLineArea / (prob_lineArea*log(2));
+
+				derivative_line_entropy += derivative_probLineArea*log2(prob_lineArea) + prob_lineArea*derivative_log_probLineArea;
+			}
+		}
+		else{//2 circles have no ovelap: Overlap = 2*overlap(circle,line)
+			len = (m_Points[i + 1] - m_Points[i]).length();
+			lineArea = len*m_linesize;
+			overlap_ml = cal_Col(m_r, m_linesize);//overlap between line and marker	
+			prob_lineArea = (lineArea - 2 * overlap_ml) / sum_L;
+			line_entropy += prob_lineArea * log2(prob_lineArea);
+
+			derivative_overlap_ml = grad_Col(m_r, m_linesize);
+			derivative_probLineArea = -2 * derivative_overlap_ml / sum_L;
+			derivative_log_probLineArea = derivative_probLineArea / (prob_lineArea*log(2));
+
+			derivative_line_entropy += derivative_probLineArea*log2(prob_lineArea) + prob_lineArea*derivative_log_probLineArea;
+		}
+	}
+#endif
+	return line_entropy;
+}
+
+double area::cal_visual_display_funcv(double visual_weight){
+	double circle_entropy = cal_circle_entropy();
+	double line_entropy = cal_line_entropy();
+	double entropy_term = (circle_entropy + line_entropy) / (2 * numMarker - 1);
+	double displayPercent_term = 1 - (sum_C + sum_L) / (displayWidth * displayHeight);
+	
+	double derivative_entropy_term = visual_weight * (derivative_circle_entropy + derivative_line_entropy) / (2 * numMarker - 1);
+	double derivative_displayPercent_term =  -(1 - visual_weight)*(2 * numMarker*M_PI*m_r) / (displayWidth * displayHeight);
+	derivative_visual_display_funcv = derivative_entropy_term + derivative_displayPercent_term;
+
+	return visual_weight * entropy_term + (1 - visual_weight)*displayPercent_term;
 }
 
 double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){

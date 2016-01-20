@@ -111,6 +111,39 @@ double EMPfunc(unsigned n, const double *alpha, double *grad, void *data)
 
 }
 
+/*Maximum Visual Entropy*/
+double MVEfunc(unsigned n, const double *alpha, double *grad, void *data)
+{
+	double funcv = 0;
+	area *a = (area *)data;
+	a->setR(alpha[0]);
+
+	funcv = a->cal_circle_entropy() + a->cal_line_entropy();
+	grad[0] = a->derivative_circle_entropy + a->derivative_line_entropy;
+	printf("grad:%f funcv: %f\n", grad[0], funcv);
+	//return a->cal_totalcirclearea()+a->cal_totallinearea();
+	//return a->cal_percentcircleare() + a->cal_percentlinearea();
+	return funcv;
+}
+
+//maximum visual entropy and display occupation
+double MVEOfunc(unsigned n, const double *alpha, double *grad, void *data)
+{
+	double ve_ratio = 0.85;
+	double funcv = 0;
+	area *a = (area *)data;
+	a->setR(alpha[0]);
+
+	funcv = a->cal_visual_display_funcv(ve_ratio);
+	grad[0] = a->derivative_visual_display_funcv;
+	
+	//funcv = a->
+	printf("grad:%f funcv: %f\n", grad[0], funcv);
+	//return a->cal_totalcirclearea()+a->cal_totallinearea();
+	//return a->cal_percentcircleare() + a->cal_percentlinearea();
+	return funcv;
+}
+
 MainWindow::MainWindow(QWidget *parent) :
   QMainWindow(parent),
   ui(new Ui::MainWindow)
@@ -124,13 +157,16 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->Aspect,SIGNAL(valueChanged(double)),this,SLOT(setAspect(double)));
   QObject::connect(ControlW->ui->background,SIGNAL(toggled(bool)),this,SLOT(setBackground(bool)));
   QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(Notsave(bool)));
-  QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadCSVData()));
+  QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadOneCSVData())); 
+  //QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadMultiCSVData()));
   QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
   QObject::connect(ControlW->ui->btn_opt_ratio, SIGNAL(clicked(bool)), this, SLOT(optRatio()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
   plotwidth=500;
   plotheight=500;
+  init_markSize = 7;
+  init_lineSize = 1;
   blank = 0;
   aspecRatio = 1;
   newwidth = plotwidth - 2 * blank;
@@ -167,7 +203,7 @@ void MainWindow::ratioData(const QVector<double>& OX, const QVector<double>& OY,
 	double width = newwidth / ratio;
 	double pwidth, pheight;
 	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
-	pwidth = *(X.end() - 1) - *XX.begin();
+	pwidth = *(XX.end() - 1) - *XX.begin();
 	double changeX = pwidth / width;
 	//pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
 	pheight = *(YY.end() - 1) - *YY.begin();
@@ -188,6 +224,34 @@ void MainWindow::ratioData(const QVector<double>& OX, const QVector<double>& OY,
 		PX.push_back(tmpX);
 		PY.push_back(tmpY);
 	}
+}
+
+void MainWindow::normalizeData(QVector<QVector2D> &data){
+	vector<double> datax, datay; 
+	for (int i = 0; i < data.size(); i++){
+		datax.push_back(data[i].x());
+		datay.push_back(data[i].y());
+	}
+	qSort(datax);
+	qSort(datay);
+
+	double width = newwidth;
+	double pwidth, pheight;
+	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
+	pwidth = *(datax.end() - 1) - *datax.begin();
+	double changeX = pwidth / width;
+	//pheight = ui->customPlot->yAxis->range().upper - ui->customPlot->yAxis->range().lower;
+	pheight = *(datay.end() - 1) - *datay.begin();
+	double changeY = pheight / newheight;
+
+	for (int i = 0; i != data.size(); i++)
+	{
+		double tmpX = (data[i].x() - ui->customPlot->xAxis->range().lower) / changeX + blank;
+		double tmpY = (data[i].y() - ui->customPlot->yAxis->range().lower) / changeY + blank;
+		data[i].setX(tmpX);
+		data[i].setY(tmpY);
+	}
+
 }
 
 void MainWindow::dataSelecting(int stride){
@@ -404,7 +468,7 @@ void MainWindow::readDate()
 
 }
 
-void MainWindow::loadCSVData(){
+void MainWindow::loadOneCSVData(){
 	clearData();
 	QString filename = QFileDialog::getOpenFileName(this, QString("Open File XY"), "data/");
 	fileName = filename.split('/').last().split('.').first();
@@ -437,10 +501,14 @@ void MainWindow::loadCSVData(){
 	entropy entro(OX, OY);
 	QVector<int> indexes;
 	entro.sample_by_entropy(indexes);
-	dataSelecting(indexes);//get marker points to MX, MY
+	//dataSelecting(indexes);//get marker points to MX, MY
+
+	dataSelecting(1);
+	setAspect(3 / 3.);
 
 	ui->customPlot->addGraph();
 	ui->customPlot->graph(0)->setData(X, Y);
+	//ui->customPlot->graph(0)->setData(MX, MY);
 	//ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
@@ -453,7 +521,7 @@ void MainWindow::loadCSVData(){
 	ui->customPlot->graph(1)->setData(MX, MY);
 	//ui->customPlot->graph(1)->setData(X, Y);
 	ui->customPlot->graph(1)->setPen(QPen(QColor(0, 174, 74)));
-	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, 7));
+	ui->customPlot->graph(1)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssDisc, init_markSize));
 	ui->customPlot->graph(1)->setLineStyle(QCPGraph::lsNone);
 	//     ui->customPlot->graph(1)->setLineStyle(QCPGraph::LineStyle::lsLine);
 	qSort(X);//find maximum and minimum value of set X.
@@ -479,7 +547,7 @@ void MainWindow::loadCSVData(){
 
 	//ratioData(OX, OY, 1);//default ratio=1;
 	//ratioData(MX, MY, 2/3.);
-	setAspect(3 / 3.);
+
 	//double pwidth, pheight;
 	//pwidth = ui->customPlot->xAxis->range().upper - ui->customPlot->xAxis->range().lower;
 	//double changeX = pwidth / newwidth;
@@ -508,10 +576,42 @@ void MainWindow::loadCSVData(){
 
 	//run();
 	if (save){
-		saveFigure(1, 7);
+		saveFigure(init_lineSize, init_markSize);
 		//ui->customPlot->savePdf(fileName + "_ratio=" + QString::number(1) + "_originMarker=" + QString::number(7) + ".pdf");
 	}	
 	return;
+}
+
+void MainWindow::loadMultiCSVData(){
+	QStringList filenames = QFileDialog::getOpenFileNames(this, QString("Open File XY"), "../");
+	QVector<QVector2D> dxy;
+	QVector2D xy;
+	for (int i = 0; i != filenames.size(); i++)
+	{
+		QFile file(filenames[i]);
+		if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+			return;
+
+		while (!file.atEnd())
+		{
+			QString strLine = file.readLine();
+			QStringList lineStrList = strLine.split(QRegExp("[\r\n]"), QString::SkipEmptyParts);
+
+			if (lineStrList.size()>0)
+			{
+				QStringList strNumbers = lineStrList.at(0).split(',');
+				if (strNumbers.size() >= 2)
+				{
+					double xx = strNumbers.at(0).toDouble();
+					double yy = strNumbers.at(1).toDouble();
+					//m_data.push_back(pair<double, double>(xx, yy));
+					xy.setX(xx) ; xy.setY(yy);
+					dxy.push_back(xy);
+				}
+			}
+		}
+		normalizeData(dxy);
+	}
 }
 
 void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &minMinf, double lb, double ub)
@@ -545,7 +645,7 @@ double MainWindow::run(int &goodStep)
 	/*aspecRatio = getOptAspectRatio(X, Y);
 	printf("found optimal aspect ratio:%f\n", aspecRatio);
 	setAspect(aspecRatio);*/
-#if 1
+#if 0 //select optimal step
 	double minf = 1; //minmum overlap percentage
 	double optMS = 0;
 	for (int step = 1; step < OX.size() - 1; step++){
@@ -614,6 +714,50 @@ double MainWindow::run(int &goodStep)
 	}
 	printf("\nfound final circle radius:%f at step=%d minimum function value:%f\n", optMS, goodStep, minf);
 	return 2 * optMS;
+#else //optimize using step 1
+	double optMS = 0;
+	goodStep = 1;
+	dataSelecting(goodStep);
+	setAspect();
+	double lineWidth = ControlW->ui->LineSize->value();
+	double markerSize = ControlW->ui->MarkSize->value();
+	double lb = lineWidth / 2;//line size
+	//area *ardata = new area(PX, PY, lineWidth, markerSize);
+	area *ardata = new area(PX, PY, lineWidth, markerSize, newwidth, newheight);
+	double ub = ardata->getupperbound(PX, PY, lb);
+	if (lb <= ub)
+		printf("marker radius should between [%f, %f]\n", lb, ub);
+	else{
+		printf("cannot optimize marker radius: lb=%f and ub=%f\n", lb, ub);
+		//return -1;
+	}
+	if (markerSize < 2 * lb || markerSize>2 * ub){
+		/*printf("marker point size overflow!!!\n");
+		return markerSize;*/
+		markerSize = ub;
+	}
+	nlopt_opt opt;
+	opt = nlopt_create(NLOPT_LD_MMA, 1);
+	nlopt_set_lower_bounds(opt, &lb);
+	nlopt_set_upper_bounds(opt, &ub);
+
+	//nlopt_set_min_objective(opt, AMPfunc, (void *)ardata);
+	//nlopt_set_min_objective(opt, EMPfunc, (void *)ardata);
+	//nlopt_set_min_objective(opt, MVEfunc, (void *)ardata); 
+	nlopt_set_min_objective(opt, MVEOfunc, (void *)ardata);
+	nlopt_set_xtol_rel(opt, 1e-2);
+	double aspectRatio = 1.0005;
+	double markersize = markerSize;
+
+	double minMinf = 10e+6;
+	double minMindx = 1000;
+	double goodMS = 0;
+	double goodII = ub;
+	runLocalOptimizer(opt, goodMS, goodII, minMinf, lb, ub);
+	printf("found optimal circle radius=%f minimum function value=%f\n", goodMS, minMinf);
+	nlopt_destroy(opt);
+	delete ardata;
+	return 2 * goodMS;
 
 #endif
 	
@@ -627,7 +771,10 @@ void MainWindow::optRatio(){
 
 void MainWindow::optMarker(){
 	int goodStep;
+	time_t start = clock();
 	double markersize = run(goodStep);
+	time_t end = clock();
+	printf("ellapsed time %f seconds\n", (double)(end - start) / CLOCKS_PER_SEC);
 	if (markersize != -1){
 		//replot qcustomPlot
 		dataSelecting(goodStep);

@@ -112,6 +112,32 @@ void linearea::setCirclesize(double circlesize)
     m_circlesize = circlesize;
 }
 
+QVector<QVector2D> linearea::getPoints(){
+	return m_Points;
+}
+
+double linearea::HausdorffDist(linearea &l1, linearea &l2){
+	QVector<QVector2D> points1 = l1.getPoints();
+	QVector<QVector2D> points2 = l2.getPoints();
+
+	double shortest;
+	double h = 0;
+	double d;
+	for (int i = 0; i < points1.size(); i++){
+		shortest = INFINITY;
+		for (int j = 0; j < points2.size(); j++){
+			d = (points1[i] - points2[j]).length();
+			if (d < shortest){
+				shortest = d;
+			}
+		}
+		if (shortest > h){
+			h = shortest;
+		}
+	}
+	return h;
+}
+
 
 
 

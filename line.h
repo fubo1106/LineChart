@@ -9,8 +9,6 @@ public:
     line(const QVector2D &ps,const QVector2D &pe);//two points build line
     line(const QVector2D &p,const double &k);//point and slope build line
 
-    
-
     double getA() const;
     void setA(double value);
 

@@ -5,12 +5,13 @@
 #include <QVector2D>
 #include <QObject>
 #include "circlearea.h"
+#include "linearea.h"
 using namespace alglib;
 class area
 {
 public:
     area();
-    area(const QVector<double> &px,const QVector<double> &py,const double &linesize,const double &circlesize);
+    area(const QVector<double> &px,const QVector<double> &py,const double &linesize,const double &circlesize, int display_width = 500, int display_height = 500);
 	area(const QVector<double> &px, const QVector<double> &py, const QVector<double> &all_px, const QVector<double> &all_py, const double &linesize, const double &circlesize);
     void buildkdtree();
     void overlap();
@@ -21,6 +22,7 @@ public:
 	double cal_overlapallthree(const alglib::real_2d_array &twopoints);
     double cal_totalcirclearea();
 	double cal_percentcircleare();
+	double cal_circle_entropy();
 
     double cal_Angle(const QVector2D &s,const QVector2D &o,const QVector2D &e);
     double cal_Col(const double &r,const double &l);
@@ -28,6 +30,8 @@ public:
     double cal_coverline();
     double cal_totallinearea();
 	double cal_percentlinearea();
+	double cal_line_entropy();
+	double cal_visual_display_funcv(double visual_weight = 0.9);
 	double cal_area_from_three_vetex(const QVector2D &s, const QVector2D &o, const QVector2D &e);
 
     void fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr);
@@ -70,6 +74,13 @@ public:
 	double grad_C;
 	double grad_L;
 	double grad_func;
+	double derivative_line_entropy;
+	double derivative_circle_entropy;
+	double derivative_visual_display_funcv;
+
+private:
+	int displayWidth;
+	int displayHeight;
 
 };
 

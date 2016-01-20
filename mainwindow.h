@@ -75,7 +75,8 @@ public slots:
   void setZerolinex(double y);
   void setZeroliney(double x);
   void readDate();
-  void loadCSVData();
+  void loadOneCSVData();
+  void loadMultiCSVData();
   void optRatio();
   void optMarker();
   double run(int &goodStep);
@@ -83,6 +84,7 @@ private:
   std::vector<std::pair<float,float>> loadData(std::string strFile);
   void clearData();
   void ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio); //change y value with ratio
+  void normalizeData(QVector<QVector2D> &data);
   void dataSelecting(int stride); //select 100 data points
   void dataSelecting(QVector<int>& indexes);
   void saveFigure(double ratio, double markersize, int sampleStep = 1);
@@ -106,6 +108,8 @@ private:
   std::vector<std::pair<float,float>> m_data;
   std::vector<float> m_slopes;
 
+  double init_markSize;
+  double init_lineSize;
 };
 
 #endif // MAINWINDOW_H
