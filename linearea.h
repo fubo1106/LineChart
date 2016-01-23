@@ -11,6 +11,7 @@ class linearea
 public:
     linearea();
     linearea(const QVector<double> &px,const QVector<double> &py,const double &linesize,const double &circlesize);//input 2 sets of points.
+	linearea(const QVector<QVector2D>& points, double linesize = 1, double circlesize = 7);//input 2 sets of points.
 
     double cal_Lol(const line &l1,const line &l2);
     double cal_Lol(const QVector2D &s,const QVector2D &o,const QVector2D &e);
@@ -26,8 +27,11 @@ public:
     void setCirclesize(double circlesize);
 
 	QVector<QVector2D> getPoints();
+	void setPoints(const QVector<double> &px, const QVector<double> &py, double linesize = 1, const double circlesize = 7);
 
-	double HausdorffDist(linearea &l1, linearea &l2);
+	static double HausdorffDist(linearea &l1, linearea &l2);
+	static int intesection(linearea &l1, linearea &l2);//get number of intersection points for l1 and l2
+	
 
 private:
     QVector<QVector2D> m_Points;

@@ -146,6 +146,9 @@
     <ClCompile Include="entropy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Mark.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Banking.h">
@@ -233,6 +236,9 @@
       <Filter>Generated Files</Filter>
     </ClInclude>
     <ClInclude Include="entropy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Mark.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

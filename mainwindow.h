@@ -54,6 +54,7 @@
 #include <Banking.h>
 #include "area.h"
 #include "entropy.h"
+#include "Mark.h"
 namespace Ui {
 class MainWindow;
 }
@@ -78,16 +79,18 @@ public slots:
   void loadOneCSVData();
   void loadMultiCSVData();
   void optRatio();
-  void optMarker();
+  void optMarker();//for one sequences
+  void optMultiMarker();//for multi sequences
   double run(int &goodStep);
 private:
   std::vector<std::pair<float,float>> loadData(std::string strFile);
   void clearData();
-  void ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio); //change y value with ratio
+  void ratioData(const QVector<double>& OX, const QVector<double>& OY, double ratio = 1); //change y value with ratio
   void normalizeData(QVector<QVector2D> &data);
   void dataSelecting(int stride); //select 100 data points
   void dataSelecting(QVector<int>& indexes);
   void saveFigure(double ratio, double markersize, int sampleStep = 1);
+  void saveMarks(const string filename, vector<Mark>& marks);
 
   int marginwidth;
   int plotwidth;
@@ -106,6 +109,7 @@ private:
   Banking *m_pBank;
   double aspecRatio;
   std::vector<std::pair<float,float>> m_data;
+  QVector<QVector<QVector2D>> m_multiData;
   std::vector<float> m_slopes;
 
   double init_markSize;

@@ -33,8 +33,8 @@ SOURCES += main.cpp\
     circlearea.cpp \
     Banking.cpp \
     dataProvide.cpp \
-    area.cpp
-
+    area.cpp \
+    Mark.cpp \
 HEADERS  += mainwindow.h \
     qcustomplot.h \
     computemin.h \
@@ -61,7 +61,8 @@ HEADERS  += mainwindow.h \
     Banking.h \
     nlopt.h \
     area.h \
-	entropy.h
+	entropy.h \
+	Mark.h
 
 FORMS    += mainwindow.ui \
     form.ui

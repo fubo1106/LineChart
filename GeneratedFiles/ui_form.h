@@ -46,6 +46,8 @@ public:
     QPushButton *btn_opt_marker;
     QRadioButton *background;
     QPushButton *btn_opt_ratio;
+    QPushButton *btn_read_multi;
+    QPushButton *btn_opt_multimarker;
 
     void setupUi(QWidget *Form)
     {
@@ -90,7 +92,7 @@ public:
         label_y->setGeometry(QRect(300, 280, 54, 12));
         btn_read = new QPushButton(Form);
         btn_read->setObjectName(QStringLiteral("btn_read"));
-        btn_read->setGeometry(QRect(20, 300, 75, 23));
+        btn_read->setGeometry(QRect(0, 10, 75, 23));
         label_rangeX = new QLabel(Form);
         label_rangeX->setObjectName(QStringLiteral("label_rangeX"));
         label_rangeX->setGeometry(QRect(210, 310, 171, 16));
@@ -120,14 +122,20 @@ public:
         label_6->setGeometry(QRect(340, 210, 6, 12));
         btn_opt_marker = new QPushButton(Form);
         btn_opt_marker->setObjectName(QStringLiteral("btn_opt_marker"));
-        btn_opt_marker->setGeometry(QRect(100, 330, 75, 23));
+        btn_opt_marker->setGeometry(QRect(90, 10, 75, 23));
         background = new QRadioButton(Form);
         background->setObjectName(QStringLiteral("background"));
         background->setGeometry(QRect(100, 270, 89, 16));
         background->setChecked(true);
         btn_opt_ratio = new QPushButton(Form);
         btn_opt_ratio->setObjectName(QStringLiteral("btn_opt_ratio"));
-        btn_opt_ratio->setGeometry(QRect(20, 330, 75, 23));
+        btn_opt_ratio->setGeometry(QRect(310, 10, 75, 23));
+        btn_read_multi = new QPushButton(Form);
+        btn_read_multi->setObjectName(QStringLiteral("btn_read_multi"));
+        btn_read_multi->setGeometry(QRect(0, 70, 101, 23));
+        btn_opt_multimarker = new QPushButton(Form);
+        btn_opt_multimarker->setObjectName(QStringLiteral("btn_opt_multimarker"));
+        btn_opt_multimarker->setGeometry(QRect(110, 70, 101, 23));
 
         retranslateUi(Form);
 
@@ -152,6 +160,8 @@ public:
         btn_opt_marker->setText(QApplication::translate("Form", "OptMarker", 0));
         background->setText(QApplication::translate("Form", "Background", 0));
         btn_opt_ratio->setText(QApplication::translate("Form", "OptRatio", 0));
+        btn_read_multi->setText(QApplication::translate("Form", "loadMultiData", 0));
+        btn_opt_multimarker->setText(QApplication::translate("Form", "OptMultiMarker", 0));
     } // retranslateUi
 
 };

@@ -593,7 +593,10 @@ double area::cal_line_entropy(){
 	return line_entropy;
 }
 
-double area::cal_visual_display_funcv(double visual_weight){
+/*calculate weighted visual entropy and data ink*/
+double area::cal_visual_display_funcv(double visual_weight, double targetPixelRatio){
+
+#if 1 //penalize visual entropy and total line-mark area
 	double circle_entropy = cal_circle_entropy();
 	double line_entropy = cal_line_entropy();
 	double entropy_term = (circle_entropy + line_entropy) / (2 * numMarker - 1);
@@ -604,6 +607,20 @@ double area::cal_visual_display_funcv(double visual_weight){
 	derivative_visual_display_funcv = derivative_entropy_term + derivative_displayPercent_term;
 
 	return visual_weight * entropy_term + (1 - visual_weight)*displayPercent_term;
+
+#else //a*min(entropy)+(1-a)*min(b-data_ink), a is raito; b is objective data ink(different people differ)
+	double circle_entropy = cal_circle_entropy();
+	double line_entropy = cal_line_entropy();
+	double entropy_term = visual_weight*(circle_entropy + line_entropy) / (2 * numMarker - 1);
+
+	double visiable_term = (1 - visual_weight) * (targetPixelRatio - (sum_C + sum_L) / (displayWidth * displayHeight));
+
+	double derivative_entropy_term = visual_weight * (derivative_circle_entropy + derivative_line_entropy) / (2 * numMarker - 1);
+	double derivative_visiable_term = (1 - visual_weight) * (-(2 * numMarker*M_PI*m_r) / (displayWidth * displayHeight));
+	derivative_visual_display_funcv = derivative_entropy_term + derivative_visiable_term;
+
+	return entropy_term + visiable_term;
+#endif
 }
 
 double area::cal_area_from_three_vetex(const QVector2D &v1, const QVector2D &v2, const QVector2D &v3){

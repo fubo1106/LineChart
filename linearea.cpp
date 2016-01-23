@@ -41,6 +41,12 @@ linearea::linearea(const QVector<double> &px,const QVector<double> &py,const dou
 
 }
 
+linearea::linearea(const QVector<QVector2D>& points, double linesize, double circlesize){
+	m_lineWidth = linesize;
+	m_circlesize = circlesize;
+	m_Points.clear();
+	m_Points = points;
+}
 
 double linearea::cal_Lol(const QVector2D &s, const QVector2D &o, const QVector2D &e)
 {
@@ -116,6 +122,17 @@ QVector<QVector2D> linearea::getPoints(){
 	return m_Points;
 }
 
+void linearea::setPoints(const QVector<double> &px, const QVector<double> &py, double linesize, double circlesize){
+	m_lineWidth = linesize;
+	m_circlesize = circlesize;
+	
+	m_Points.clear();
+	for (int i = 0; i != px.size(); i++)
+	{
+		m_Points.push_back(QVector2D(px[i], py[i]));
+	}
+}
+
 double linearea::HausdorffDist(linearea &l1, linearea &l2){
 	QVector<QVector2D> points1 = l1.getPoints();
 	QVector<QVector2D> points2 = l2.getPoints();
@@ -136,6 +153,35 @@ double linearea::HausdorffDist(linearea &l1, linearea &l2){
 		}
 	}
 	return h;
+}
+
+int linearea::intesection(linearea &l1, linearea &l2){
+	QVector<QVector2D> points1 = l1.getPoints();
+	QVector<QVector2D> points2 = l2.getPoints();
+
+	int num = qMin(points1.size(), points2.size());
+	bool largerThan;
+	int intersectionNum = 0;
+
+	if (points1[0].y() > points2[0].y())
+		largerThan = true;
+	else
+		largerThan = false;
+	for (int i = 1; i < num; i++){
+		double y1 = points1[i].y();
+		double y2 = points2[i].y();
+
+		if (largerThan && y1 <= y2){
+			intersectionNum++;
+			largerThan = !largerThan;
+		}
+		if (!largerThan && y1 >= y2){
+			intersectionNum++;
+			largerThan = !largerThan;
+		}
+		
+	}
+	return intersectionNum;
 }
 
 

@@ -61,6 +61,7 @@
 #include "alglib3.9.0/src/optimization.h"
 #include "alglib3.9.0/src/stdafx.h"
 #include <direct.h>
+#include <fstream>
 using namespace alglib;
 
 double getOptAspectRatio(const QVector<double>& dataX, const QVector<double>& dataY){
@@ -129,12 +130,12 @@ double MVEfunc(unsigned n, const double *alpha, double *grad, void *data)
 //maximum visual entropy and display occupation
 double MVEOfunc(unsigned n, const double *alpha, double *grad, void *data)
 {
-	double ve_ratio = 0.85;
+	double ve_ratio = 0.9;
 	double funcv = 0;
 	area *a = (area *)data;
 	a->setR(alpha[0]);
-
-	funcv = a->cal_visual_display_funcv(ve_ratio);
+	double targetPixelRatio = 0.3;
+	funcv = a->cal_visual_display_funcv(ve_ratio, targetPixelRatio);
 	grad[0] = a->derivative_visual_display_funcv;
 	
 	//funcv = a->
@@ -158,13 +159,14 @@ MainWindow::MainWindow(QWidget *parent) :
   QObject::connect(ControlW->ui->background,SIGNAL(toggled(bool)),this,SLOT(setBackground(bool)));
   QObject::connect(ControlW->ui->save, SIGNAL(toggled(bool)), this, SLOT(Notsave(bool)));
   QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadOneCSVData())); 
-  //QObject::connect(ControlW->ui->btn_read, SIGNAL(clicked(bool)), this, SLOT(loadMultiCSVData()));
+  QObject::connect(ControlW->ui->btn_read_multi, SIGNAL(clicked(bool)), this, SLOT(loadMultiCSVData()));
   QObject::connect(ControlW->ui->btn_opt_marker, SIGNAL(clicked(bool)), this, SLOT(optMarker()));
+  QObject::connect(ControlW->ui->btn_opt_multimarker, SIGNAL(clicked(bool)), this, SLOT(optMultiMarker()));
   QObject::connect(ControlW->ui->btn_opt_ratio, SIGNAL(clicked(bool)), this, SLOT(optRatio()));
   QObject::connect(ControlW->ui->zeroliney,SIGNAL(valueChanged(double)),this,SLOT(setZerolinex(double)));
   QObject::connect(ControlW->ui->zerolinex,SIGNAL(valueChanged(double)),this,SLOT(setZeroliney(double)));
   plotwidth=500;
-  plotheight=500;
+  plotheight=500; //excel 600*400
   init_markSize = 7;
   init_lineSize = 1;
   blank = 0;
@@ -184,6 +186,7 @@ void MainWindow::clearData(){
 	OX.clear(); OY.clear();
 	PX.clear(); PY.clear();
 	m_data.clear(); m_slopes.clear();
+	m_multiData.clear();
 	ui->customPlot->clearPlottables();
 	ui->customPlot->rescaleAxes(true);
 	ui->customPlot->replot();
@@ -304,6 +307,16 @@ void MainWindow::saveFigure(double ratio, double markersize, int sampleStep){
 	mkdir(dir.c_str());
 	ui->customPlot->savePdf(dstfile);
 	printf("save result into %s\n", dstfile.toStdString().c_str());
+}
+
+void MainWindow::saveMarks(const string filename, vector<Mark>& marks){
+	ofstream ofs(filename);
+	for (int i = 0; i < marks.size(); i++){
+		ofs << "<mark>" << endl
+			<< "\t" << "<shape>" << marks[i].getShape() << "</shape>" << endl
+			<< "\t" << "<size>" << marks[i].getSize() << "</size>" << endl
+			<< "</marker>" << endl;
+	}
 }
 
 void MainWindow::setMarksize(double d)
@@ -507,8 +520,8 @@ void MainWindow::loadOneCSVData(){
 	setAspect(3 / 3.);
 
 	ui->customPlot->addGraph();
-	ui->customPlot->graph(0)->setData(X, Y);
-	//ui->customPlot->graph(0)->setData(MX, MY);
+	//ui->customPlot->graph(0)->setData(X, Y);
+	ui->customPlot->graph(0)->setData(MX, MY);
 	//ui->customPlot->setInteractions(QCP::iRangeDrag | QCP::iRangeZoom);
 	//     ui->customPlot->graph(0)->setLineStyle(QCPGraph::LineStyle::lsNone);
 	//ui->customPlot->graph(0)->setScatterStyle(QCPScatterStyle(QCPScatterStyle::ssCircle, 70));
@@ -583,7 +596,7 @@ void MainWindow::loadOneCSVData(){
 }
 
 void MainWindow::loadMultiCSVData(){
-	QStringList filenames = QFileDialog::getOpenFileNames(this, QString("Open File XY"), "../");
+	QStringList filenames = QFileDialog::getOpenFileNames(this, QString("Open File XY"), "data/");
 	QVector<QVector2D> dxy;
 	QVector2D xy;
 	for (int i = 0; i != filenames.size(); i++)
@@ -610,8 +623,15 @@ void MainWindow::loadMultiCSVData(){
 				}
 			}
 		}
-		normalizeData(dxy);
+		//normalizeData(dxy);
+		m_multiData.push_back(dxy);
+		dxy.clear();
 	}
+	
+	
+
+	/*visualize muti line and markers*/
+
 }
 
 void runLocalOptimizer(nlopt_opt opt, double &goodMS, double &goodInit, double &minMinf, double lb, double ub)
@@ -717,8 +737,8 @@ double MainWindow::run(int &goodStep)
 #else //optimize using step 1
 	double optMS = 0;
 	goodStep = 1;
-	dataSelecting(goodStep);
-	setAspect();
+	/*dataSelecting(goodStep);
+	setAspect();*/
 	double lineWidth = ControlW->ui->LineSize->value();
 	double markerSize = ControlW->ui->MarkSize->value();
 	double lb = lineWidth / 2;//line size
@@ -790,6 +810,87 @@ void MainWindow::optMarker(){
 		printf("optimal mark size: %f\n", markersize);
 	}	
 	return;
+}
+
+void MainWindow::optMultiMarker(){
+	QVector<double> datax, datay;
+	int goodStep;
+
+	/*calculate intersections and distance for every 2 lines*/
+	int **overlapPoints;
+	double **distance;
+	overlapPoints = new int*[m_multiData.size()];
+	distance = new double*[m_multiData.size()];
+
+	for (int i = 0; i < m_multiData.size(); i++){
+		overlapPoints[i] = new int[m_multiData.size()];
+		distance[i] = new double[m_multiData.size()];
+	}
+
+	for (int i = 0; i < m_multiData.size(); i++){
+		overlapPoints[i][i] = 0;
+		distance[i][i] = 0;
+		for (int j = i + 1; j < m_multiData.size(); j++){
+			linearea l1(m_multiData[i]);
+			linearea l2(m_multiData[j]);
+
+			double dist = linearea::HausdorffDist(l1, l2);
+			int num = linearea::intesection(l1, l2);
+
+			overlapPoints[i][j] = num;
+			overlapPoints[j][i] = num;
+			distance[i][j] = dist;
+			distance[j][i] = dist;
+			printf("distance[%d][%d]:%f\n", i, j, distance[i][j]);
+			printf("overlapPoints[%d][%d]:%d\n", i, j, overlapPoints[i][j]);
+		}
+	}
+
+	vector<Mark> marks;
+	Mark mark;
+	marks.resize(m_multiData.size());
+	/*select mark shape and line color according to the intersection points and line distance*/
+	/*1. for line color: set different colors according excel or colorbrewer*/
+	/*2. for mark shape: set shape combines that have the minimum overlap at intersection points.
+	% '-o' circle
+	% '-s' square
+	% '-d' diamond
+	% '-^' upward-pointing triangle
+	% '-v' downward-pointing triangle
+	% '->' rightward-pointing triangle
+	% '-<' leftward-pointing triangle
+	% '-p' pentagram (five-pointed star)
+	% '-h' hexagram (six-pointed star) 
+	Proposed combinations:
+	1. '-o' <=> '-^' 
+	2. '-s' <=> '-^'
+	3. '-d' <=> '-^'
+	4. '-^' <=> '-o' '-s' '-d'*/
+	for (int shape1 = 0; shape1 < m_multiData.size(); shape1++){
+		for (int shape2 = 0; shape2 < m_multiData.size(); shape2++){
+			for (int shape3 = 0; shape3 < m_multiData.size(); shape3++){
+				for (int shape4 = 0; shape4 < m_multiData.size(); shape4++){
+					
+				}
+			}
+		}
+	}
+	/*optimize mark size for each line*/
+	for (int i = 0; i < m_multiData.size(); i++){
+		datax.clear();
+		datay.clear();
+		for (int j = 0; j < m_multiData[i].size(); j++){
+			datax.push_back(m_multiData[i][j].x());
+			datay.push_back(m_multiData[i][j].y());
+		}
+		ratioData(datax, datay);
+ 		double markersize = run(goodStep);
+		marks[i].setSize(markersize);
+	}
+
+	delete overlapPoints;
+	delete distance;
+	saveMarks("a.xml", marks);
 }
 
 

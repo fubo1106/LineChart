@@ -24,6 +24,7 @@ line::line(const QVector2D &p, const double &k)
     a=k;
     b=p.y()-a*p.x();
 }
+
 double line::getA() const
 {
     return a;

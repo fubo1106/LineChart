@@ -151,8 +151,8 @@
   <widget class="QPushButton" name="btn_read">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>300</y>
+     <x>0</x>
+     <y>10</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -267,8 +267,8 @@
   <widget class="QPushButton" name="btn_opt_marker">
    <property name="geometry">
     <rect>
-     <x>100</x>
-     <y>330</y>
+     <x>90</x>
+     <y>10</y>
      <width>75</width>
      <height>23</height>
     </rect>
@@ -296,14 +296,40 @@
   <widget class="QPushButton" name="btn_opt_ratio">
    <property name="geometry">
     <rect>
-     <x>20</x>
-     <y>330</y>
+     <x>310</x>
+     <y>10</y>
      <width>75</width>
      <height>23</height>
     </rect>
    </property>
    <property name="text">
     <string>OptRatio</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btn_read_multi">
+   <property name="geometry">
+    <rect>
+     <x>0</x>
+     <y>70</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>loadMultiData</string>
+   </property>
+  </widget>
+  <widget class="QPushButton" name="btn_opt_multimarker">
+   <property name="geometry">
+    <rect>
+     <x>110</x>
+     <y>70</y>
+     <width>101</width>
+     <height>23</height>
+    </rect>
+   </property>
+   <property name="text">
+    <string>OptMultiMarker</string>
    </property>
   </widget>
  </widget>

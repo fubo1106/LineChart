@@ -172,6 +172,7 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="mainwindow.cpp" />
     <ClCompile Include="alglib3.9.0\src\optimization.cpp" />
+    <ClCompile Include="Mark.cpp" />
     <ClCompile Include="qcustomplot.cpp" />
     <ClCompile Include="Release\moc_form.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
@@ -247,6 +248,7 @@ endlocal
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
       <AdditionalInputs Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">$(QTDIR)\bin\moc.exe;%(FullPath)</AdditionalInputs>
     </CustomBuild>
+    <ClInclude Include="Mark.h" />
     <ClInclude Include="nlopt.h" />
     <ClInclude Include="alglib3.9.0\src\optimization.h" />
     <CustomBuild Include="qcustomplot.h">

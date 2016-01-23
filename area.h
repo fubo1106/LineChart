@@ -31,7 +31,7 @@ public:
     double cal_totallinearea();
 	double cal_percentlinearea();
 	double cal_line_entropy();
-	double cal_visual_display_funcv(double visual_weight = 0.9);
+	double cal_visual_display_funcv(double visual_weight = 0.9, double targetPixelRatio=0.3);
 	double cal_area_from_three_vetex(const QVector2D &s, const QVector2D &o, const QVector2D &e);
 
     void fun_grad(const real_1d_array &x, double &func, real_1d_array &grad, void *ptr);
@@ -71,8 +71,8 @@ public:
 	double vis_per_C;
     double vis_L;
 	double overlap_per_L;
-	double grad_C;
-	double grad_L;
+	double grad_C; //percent circle area
+	double grad_L; //percent line area
 	double grad_func;
 	double derivative_line_entropy;
 	double derivative_circle_entropy;
